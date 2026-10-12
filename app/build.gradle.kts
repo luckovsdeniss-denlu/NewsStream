@@ -3,6 +3,12 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Version is bumped automatically on every push: CI passes its run number
+// (GITHUB_RUN_NUMBER) so versionCode increases monotonically and versionName
+// becomes <major.minor>.<build>. Local builds fall back to build 0.
+val baseVersion = "0.1"
+val buildNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "0").toInt()
+
 android {
     namespace = "com.newsstream"
     compileSdk = 34
@@ -10,8 +16,8 @@ android {
         applicationId = "com.newsstream"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = maxOf(buildNumber, 1)
+        versionName = "$baseVersion.$buildNumber"
     }
     buildFeatures { compose = true }
     composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }

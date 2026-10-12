@@ -20,7 +20,9 @@ jobs:
           gradle-version: '8.7'
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
+      - name: Name APK with version
+        run: cp app/build/outputs/apk/debug/app-debug.apk NewsStream-0.1.${{ github.run_number }}.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: NewsStream-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: NewsStream-0.1.${{ github.run_number }}
+          path: NewsStream-0.1.${{ github.run_number }}.apk
