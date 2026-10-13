@@ -9,6 +9,11 @@ plugins {
 val baseVersion = "0.1"
 val buildNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "0").toInt()
 
+// Guardian Open Platform key: GUARDIAN_API_KEY env var (a CI secret) or Gradle property.
+// Falls back to the public, rate-limited "test" key.
+val guardianApiKey = (System.getenv("GUARDIAN_API_KEY") ?: findProperty("GUARDIAN_API_KEY") as String?)
+    ?.takeIf { it.isNotBlank() } ?: "test"
+
 android {
     namespace = "com.newsstream"
     compileSdk = 34
@@ -18,8 +23,12 @@ android {
         targetSdk = 34
         versionCode = maxOf(buildNumber, 1)
         versionName = "$baseVersion.$buildNumber"
+        buildConfigField("String", "GUARDIAN_API_KEY", "\"$guardianApiKey\"")
     }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
     composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

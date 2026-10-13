@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
+import com.newsstream.ui.byline
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,13 +47,14 @@ fun ArticleScreen(article: Article, onBack: () -> Unit) {
         ) {
             Text(article.title, style = MaterialTheme.typography.headlineSmall)
             Text(
-                "${article.source} · ${article.publishedDate}",
+                article.byline(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
-            article.body.forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
-            OutlinedButton(onClick = { uriHandler.openUri(article.sourceUrl) }) {
-                Text("More from ${article.source}")
+            val paragraphs = article.body.ifEmpty { listOf(article.summary).filter { it.isNotBlank() } }
+            paragraphs.forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
+            OutlinedButton(onClick = { uriHandler.openUri(article.url) }) {
+                Text(if (article.body.isEmpty()) "Read full story on ${article.source}" else "Open on ${article.source}")
             }
         }
     }
