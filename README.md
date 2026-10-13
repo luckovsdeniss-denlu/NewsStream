@@ -2,7 +2,7 @@
 
 Android app skeleton (Kotlin, Jetpack Compose, Material 3).
 
-Video playback, news articles and topics/categories have been removed; the app currently shows an empty home screen.
+The home screen lists bundled sample articles (`data/SampleArticles.kt`); tap one to read it. No live feed yet.
 
 ## Build
 CI builds a debug APK on every push (see `.github/workflows/build-apk.yml`).
