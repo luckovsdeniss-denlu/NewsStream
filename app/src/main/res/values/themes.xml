@@ -1,8 +1,7 @@
 <resources>
-    <style name="Theme.NewsStream" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/glacier_background</item>
-        <item name="android:statusBarColor">@color/glacier_background</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:navigationBarColor">@color/glacier_navy</item>
+    <style name="Theme.NewsStream" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/ocean_background</item>
+        <item name="android:statusBarColor">@color/ocean_background</item>
+        <item name="android:navigationBarColor">@color/ocean_background</item>
     </style>
 </resources>

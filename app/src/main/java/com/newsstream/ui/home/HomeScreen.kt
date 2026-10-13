@@ -112,8 +112,8 @@ private fun FilterRow(selected: Filter, onSelect: (Filter) -> Unit) {
                 onClick = { onSelect(option) },
                 label = { Text(option.label, style = MaterialTheme.typography.labelLarge) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     labelColor = MaterialTheme.colorScheme.primary,
                     containerColor = MaterialTheme.colorScheme.surface,
                 ),
@@ -171,7 +171,7 @@ private fun ArticleCard(article: Article, onClick: () -> Unit) {
             .fillMaxWidth()
             .panel(accent)
             .clickable(onClick = onClick)
-            .padding(start = 20.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(

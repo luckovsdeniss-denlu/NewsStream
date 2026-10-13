@@ -1,4 +1,3 @@
 <resources>
-    <color name="glacier_background">#FFF2F7FD</color>
-    <color name="glacier_navy">#FF0B2A66</color>
+    <color name="ocean_background">#FF061226</color>
 </resources>
