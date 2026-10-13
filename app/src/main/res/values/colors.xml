@@ -1,3 +1,4 @@
 <resources>
-    <color name="hud_background">#FF0A0C0B</color>
+    <color name="glacier_background">#FFF2F7FD</color>
+    <color name="glacier_navy">#FF0B2A66</color>
 </resources>

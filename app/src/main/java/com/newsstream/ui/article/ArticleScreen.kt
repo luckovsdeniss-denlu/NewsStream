@@ -32,7 +32,7 @@ import com.newsstream.data.Article
 import com.newsstream.data.ContentKind
 import com.newsstream.ui.EngagementRow
 import com.newsstream.ui.byline
-import com.newsstream.ui.theme.HudBackground
+import com.newsstream.ui.theme.AppBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,9 +41,10 @@ fun ArticleScreen(article: Article, onBack: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     val social = article.kind == ContentKind.SOCIAL
     val accent = if (social) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-    HudBackground {
+    AppBackground {
         Scaffold(
             containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onBackground,
             topBar = {
                 TopAppBar(
                     title = { Text(article.source.uppercase(), color = accent) },
@@ -69,7 +70,7 @@ fun ArticleScreen(article: Article, onBack: () -> Unit) {
                     },
                 )
                 Text(
-                    "▸ " + article.byline().uppercase(),
+                    article.byline().uppercase(),
                     style = MaterialTheme.typography.labelMedium,
                     color = accent,
                 )

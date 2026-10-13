@@ -42,8 +42,8 @@ import com.newsstream.data.ContentKind
 import com.newsstream.ui.EngagementRow
 import com.newsstream.ui.NewsUiState
 import com.newsstream.ui.byline
-import com.newsstream.ui.theme.HudBackground
-import com.newsstream.ui.theme.hudFrame
+import com.newsstream.ui.theme.AppBackground
+import com.newsstream.ui.theme.panel
 
 private enum class Filter(val label: String, val kind: ContentKind?) {
     ALL("ALL", null),
@@ -57,16 +57,17 @@ fun HomeScreen(state: NewsUiState, onRefresh: () -> Unit, onArticleClick: (Artic
     var filter by rememberSaveable { mutableStateOf(Filter.ALL) }
     val visible = filter.kind?.let { kind -> state.articles.filter { it.kind == kind } } ?: state.articles
 
-    HudBackground {
+    AppBackground {
         Scaffold(
             containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onBackground,
             topBar = {
                 TopAppBar(
                     title = {
                         Column {
                             Text("NEWSSTREAM", color = MaterialTheme.colorScheme.primary)
                             Text(
-                                "SYS.FEED // ${state.articles.size} SIGNALS",
+                                "LIVE · ${state.articles.size} STORIES",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.secondary,
                             )
@@ -109,11 +110,12 @@ private fun FilterRow(selected: Filter, onSelect: (Filter) -> Unit) {
             FilterChip(
                 selected = option == selected,
                 onClick = { onSelect(option) },
-                label = { Text("[ ${option.label} ]", style = MaterialTheme.typography.labelLarge) },
+                label = { Text(option.label, style = MaterialTheme.typography.labelLarge) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                     labelColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
         }
@@ -129,7 +131,7 @@ private fun ArticleList(articles: List<Article>, failedSources: List<String>, on
         if (failedSources.isNotEmpty()) {
             item {
                 Text(
-                    "⚠ NO RESPONSE: ${failedSources.joinToString().uppercase()}",
+                    "Couldn't reach: ${failedSources.joinToString()}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -149,13 +151,13 @@ private fun EmptyState(onRefresh: () -> Unit, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            "⚠ NO SIGNAL\nCouldn't load any news. Check your connection.",
+            "Couldn't load any news. Check your connection.",
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall,
         )
         OutlinedButton(onClick = onRefresh) {
             Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text("RETRY UPLINK", Modifier.padding(start = 8.dp), style = MaterialTheme.typography.labelLarge)
+            Text("Try again", Modifier.padding(start = 8.dp), style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -167,13 +169,13 @@ private fun ArticleCard(article: Article, onClick: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .hudFrame(accent)
+            .panel(accent)
             .clickable(onClick = onClick)
-            .padding(16.dp),
+            .padding(start = 20.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            (if (social) "◇ " else "◆ ") + article.byline().uppercase(),
+            article.byline().uppercase(),
             style = MaterialTheme.typography.labelMedium,
             color = accent,
             maxLines = 1,
