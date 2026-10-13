@@ -14,10 +14,23 @@ data class NewsResult(val articles: List<Article>, val failedSources: List<Strin
 
 class NewsRepository(
     private val sources: List<NewsSource> = listOf(
+        // World
         GuardianNewsSource(BuildConfig.GUARDIAN_API_KEY),
         RssNewsSource("BBC News", "https://feeds.bbci.co.uk/news/world/rss.xml"),
         RssNewsSource("NPR", "https://feeds.npr.org/1001/rss.xml"),
         RssNewsSource("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
+        RssNewsSource("The New York Times", "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
+        RssNewsSource("Sky News", "https://feeds.skynews.com/feeds/rss/world.xml"),
+        RssNewsSource("Deutsche Welle", "https://rss.dw.com/rdf/rss-en-all"),
+        RssNewsSource("France 24", "https://www.france24.com/en/rss"),
+        RssNewsSource("CBS News", "https://www.cbsnews.com/latest/rss/world"),
+        // Business
+        RssNewsSource("CNBC", "https://www.cnbc.com/id/100003114/device/rss/rss.html"),
+        // Technology and science
+        RssNewsSource("Ars Technica", "https://feeds.arstechnica.com/arstechnica/index"),
+        RssNewsSource("TechCrunch", "https://techcrunch.com/feed/"),
+        RssNewsSource("The Verge", "https://www.theverge.com/rss/index.xml"),
+        RssNewsSource("NASA", "https://www.nasa.gov/news-release/feed/"),
     ),
 ) {
     /** Fetches every source in parallel; a failing source is reported rather than failing the rest. */

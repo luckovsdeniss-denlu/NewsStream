@@ -3,8 +3,6 @@ package com.newsstream.data.source
 import android.net.Uri
 import com.newsstream.data.Article
 import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 /** The Guardian Open Platform content API: https://open-platform.theguardian.com */
 class GuardianNewsSource(private val apiKey: String) : NewsSource {
@@ -29,15 +27,10 @@ class GuardianNewsSource(private val apiKey: String) : NewsSource {
                 summary = htmlToText(fields?.optString("trailText").orEmpty()),
                 body = fields?.optString("bodyText").orEmpty().toParagraphs(),
                 source = name,
-                publishedAt = parseIsoDate(item.optString("webPublicationDate")),
+                publishedAt = parseFeedDate(item.optString("webPublicationDate")),
             )
         }
     }
-
-    private fun parseIsoDate(value: String): Long =
-        runCatching {
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX", Locale.US).parse(value)?.time
-        }.getOrNull() ?: 0L
 
     // bodyText has no paragraph markup, so break it into readable chunks of a few sentences.
     private fun String.toParagraphs(): List<String> {
