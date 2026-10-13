@@ -1,13 +1,8 @@
 # NewsStream
 
-Android news streaming platform: browse news by category and watch live/on-demand video (HLS) inside articles.
+Android app skeleton (Kotlin, Jetpack Compose, Material 3).
 
-**Stack:** Kotlin, Jetpack Compose (Material 3), Navigation Compose, Media3 ExoPlayer, Coil.
-
-## Structure
-- `data/` – models and `NewsRepository` (currently `SampleNewsRepository` with demo content)
-- `ui/home` – category tabs + article feed
-- `ui/detail` – article page with video player
+Video playback, news articles and topics/categories have been removed; the app currently shows an empty home screen.
 
 ## Build
 CI builds a debug APK on every push (see `.github/workflows/build-apk.yml`).
@@ -19,6 +14,4 @@ Every push to `main` gets a new version automatically: CI builds `versionName = 
 `baseVersion` in `app/build.gradle.kts` and the `0.1` prefix in the workflow.
 
 ## Roadmap
-- Real backend / news API via Retrofit
-- Dependency injection (Hilt), offline cache (Room)
-- Search, bookmarks, push notifications, live-stream schedule
+- Decide on new content and features
