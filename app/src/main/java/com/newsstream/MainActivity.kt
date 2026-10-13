@@ -21,16 +21,16 @@ class MainActivity : ComponentActivity() {
             NewsStreamTheme {
                 val newsViewModel: NewsViewModel = viewModel()
                 val state by newsViewModel.state.collectAsStateWithLifecycle()
-                var openArticleUrl by rememberSaveable { mutableStateOf<String?>(null) }
-                val openArticle = state.articles.firstOrNull { it.url == openArticleUrl }
+                var openArticleId by rememberSaveable { mutableStateOf<String?>(null) }
+                val openArticle = state.articles.firstOrNull { it.id == openArticleId }
                 if (openArticle == null) {
                     HomeScreen(
                         state = state,
                         onRefresh = newsViewModel::refresh,
-                        onArticleClick = { openArticleUrl = it.url },
+                        onArticleClick = { openArticleId = it.id },
                     )
                 } else {
-                    ArticleScreen(openArticle, onBack = { openArticleUrl = null })
+                    ArticleScreen(openArticle, onBack = { openArticleId = null })
                 }
             }
         }

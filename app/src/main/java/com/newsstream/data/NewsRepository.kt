@@ -1,8 +1,13 @@
 package com.newsstream.data
 
 import com.newsstream.BuildConfig
+import com.newsstream.data.source.BlueskySource
 import com.newsstream.data.source.GuardianNewsSource
+import com.newsstream.data.source.HackerNewsSource
+import com.newsstream.data.source.MastodonTrendingLinksSource
+import com.newsstream.data.source.MastodonTrendingPostsSource
 import com.newsstream.data.source.NewsSource
+import com.newsstream.data.source.RedditSource
 import com.newsstream.data.source.RssNewsSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -31,6 +36,14 @@ class NewsRepository(
         RssNewsSource("TechCrunch", "https://techcrunch.com/feed/"),
         RssNewsSource("The Verge", "https://www.theverge.com/rss/index.xml"),
         RssNewsSource("NASA", "https://www.nasa.gov/news-release/feed/"),
+        // Social
+        RedditSource("worldnews"),
+        RedditSource("news"),
+        RedditSource("technology"),
+        HackerNewsSource(),
+        MastodonTrendingPostsSource(),
+        MastodonTrendingLinksSource(),
+        BlueskySource(),
     ),
 ) {
     /** Fetches every source in parallel; a failing source is reported rather than failing the rest. */
@@ -40,7 +53,7 @@ class NewsRepository(
         }
         NewsResult(
             articles = results.flatMap { (_, result) -> result.getOrDefault(emptyList()) }
-                .distinctBy { it.url }
+                .distinctBy { it.id }
                 .sortedByDescending { it.publishedAt },
             failedSources = results.filter { (_, result) -> result.isFailure }.map { (source, _) -> source.name },
         )

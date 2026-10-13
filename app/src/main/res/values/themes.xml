@@ -1,7 +1,7 @@
 <resources>
     <style name="Theme.NewsStream" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/cyber_background</item>
-        <item name="android:statusBarColor">@color/cyber_background</item>
-        <item name="android:navigationBarColor">@color/cyber_background</item>
+        <item name="android:windowBackground">@color/hud_background</item>
+        <item name="android:statusBarColor">@color/hud_background</item>
+        <item name="android:navigationBarColor">@color/hud_background</item>
     </style>
 </resources>
