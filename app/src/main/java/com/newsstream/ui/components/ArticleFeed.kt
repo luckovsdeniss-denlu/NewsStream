@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
 import com.newsstream.data.ContentKind
+import com.newsstream.data.Topic
 import com.newsstream.ui.EngagementRow
 import com.newsstream.ui.byline
 import com.newsstream.ui.icon
@@ -46,6 +47,9 @@ fun ArticleFeed(
     modifier: Modifier = Modifier,
     showTopic: Boolean = true,
     emptyMessage: String = "Couldn't load any news. Check your connection.",
+    /** When set, tapping a card's topic tag calls this (e.g. to toggle a topic filter). */
+    onTopicClick: ((Topic) -> Unit)? = null,
+    selectedTopics: Set<Topic> = emptySet(),
 ) {
     Box(modifier.fillMaxSize()) {
         when {
@@ -63,7 +67,13 @@ fun ArticleFeed(
                     }
                 }
                 items(articles, key = { it.id }) { article ->
-                    ArticleCard(article, showTopic, onClick = { onArticleClick(article) })
+                    ArticleCard(
+                        article = article,
+                        showTopic = showTopic,
+                        onClick = { onArticleClick(article) },
+                        onTopicClick = onTopicClick,
+                        topicSelected = article.topic in selectedTopics,
+                    )
                 }
             }
             isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -91,7 +101,13 @@ private fun EmptyState(message: String, onRefresh: () -> Unit, modifier: Modifie
 }
 
 @Composable
-fun ArticleCard(article: Article, showTopic: Boolean, onClick: () -> Unit) {
+fun ArticleCard(
+    article: Article,
+    showTopic: Boolean,
+    onClick: () -> Unit,
+    onTopicClick: ((Topic) -> Unit)? = null,
+    topicSelected: Boolean = false,
+) {
     val social = article.kind == ContentKind.SOCIAL
     val accent = if (social) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
     Column(
@@ -103,7 +119,7 @@ fun ArticleCard(article: Article, showTopic: Boolean, onClick: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (showTopic) TopicTag(article)
+            if (showTopic) TopicTag(article.topic, topicSelected, onTopicClick)
             Text(
                 article.byline().uppercase(),
                 style = MaterialTheme.typography.labelMedium,
@@ -136,25 +152,19 @@ fun ArticleCard(article: Article, showTopic: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun TopicTag(article: Article) {
+fun TopicTag(topic: Topic, selected: Boolean = false, onClick: ((Topic) -> Unit)? = null) {
+    val container = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
+    val content = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer
     Row(
         Modifier
             .clip(RoundedCornerShape(6.dp))
-            .background(MaterialTheme.colorScheme.primaryContainer)
+            .background(container)
+            .then(if (onClick != null) Modifier.clickable { onClick(topic) } else Modifier)
             .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(
-            article.topic.icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(12.dp),
-        )
-        Text(
-            article.topic.label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-        )
+        Icon(topic.icon, contentDescription = null, tint = content, modifier = Modifier.size(12.dp))
+        Text(topic.label.uppercase(), style = MaterialTheme.typography.labelSmall, color = content)
     }
 }
