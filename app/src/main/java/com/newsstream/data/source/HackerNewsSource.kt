@@ -3,6 +3,8 @@ package com.newsstream.data.source
 import com.newsstream.data.Article
 import com.newsstream.data.ContentKind
 import com.newsstream.data.Engagement
+import com.newsstream.data.Topic
+import com.newsstream.data.TopicClassifier
 import org.json.JSONObject
 
 /** Hacker News front page via the Algolia HN Search API: https://hn.algolia.com/api */
@@ -27,6 +29,7 @@ class HackerNewsSource : NewsSource {
                 author = hit.optStringOrNull("author"),
                 engagement = Engagement(likes = hit.optInt("points"), comments = hit.optInt("num_comments")),
                 discussionUrl = thread,
+                topic = TopicClassifier.classify(title, fallback = Topic.TECH),
             )
         }
     }

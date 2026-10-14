@@ -2,6 +2,8 @@ package com.newsstream.data.source
 
 import android.util.Xml
 import com.newsstream.data.Article
+import com.newsstream.data.Topic
+import com.newsstream.data.TopicClassifier
 import org.xmlpull.v1.XmlPullParser
 import java.io.StringReader
 
@@ -9,7 +11,12 @@ import java.io.StringReader
  * Reads an RSS 2.0, RSS 1.0 (RDF) or Atom feed. Feeds carry headlines and summaries only,
  * not full text.
  */
-class RssNewsSource(override val name: String, private val feedUrl: String) : NewsSource {
+class RssNewsSource(
+    override val name: String,
+    private val feedUrl: String,
+    /** Topic for items that no keyword or category places elsewhere. */
+    private val defaultTopic: Topic = Topic.WORLD,
+) : NewsSource {
 
     override fun fetch(): List<Article> {
         val parser = Xml.newPullParser()
@@ -23,6 +30,11 @@ class RssNewsSource(override val name: String, private val feedUrl: String) : Ne
                 XmlPullParser.START_TAG -> when (val tag = parser.name) {
                     "item", "entry" -> fields = mutableMapOf()
                     "link" -> fields?.let { readLink(parser, it) }
+                    // RSS: <category>Tech</category>; Atom: <category term="Tech"/>
+                    "category" -> fields?.let {
+                        val category = parser.getAttributeValue(null, "term") ?: parser.nextText()
+                        it["category"] = listOfNotNull(it["category"], category.trim()).joinToString(" ")
+                    }
                     in TEXT_TAGS -> fields?.putIfAbsent(tag, parser.nextText().trim())
                 }
                 XmlPullParser.END_TAG -> if (parser.name == "item" || parser.name == "entry") {
@@ -49,13 +61,16 @@ class RssNewsSource(override val name: String, private val feedUrl: String) : Ne
         val title = this["title"]?.takeIf { it.isNotBlank() } ?: return null
         val link = this["link"]?.takeIf { it.isNotBlank() } ?: return null
         val date = this["pubDate"] ?: this["dc:date"] ?: this["published"] ?: this["updated"]
+        val cleanTitle = htmlToText(title)
+        val summary = htmlToText(this["description"] ?: this["summary"].orEmpty())
         return Article(
             url = link,
-            title = htmlToText(title),
-            summary = htmlToText(this["description"] ?: this["summary"].orEmpty()),
+            title = cleanTitle,
+            summary = summary,
             body = emptyList(),
             source = name,
             publishedAt = parseFeedDate(date.orEmpty()),
+            topic = TopicClassifier.classify(cleanTitle, summary, this["category"].orEmpty(), defaultTopic),
         )
     }
 

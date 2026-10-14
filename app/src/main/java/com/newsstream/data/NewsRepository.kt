@@ -30,16 +30,16 @@ class NewsRepository(
         RssNewsSource("France 24", "https://www.france24.com/en/rss"),
         RssNewsSource("CBS News", "https://www.cbsnews.com/latest/rss/world"),
         // Business
-        RssNewsSource("CNBC", "https://www.cnbc.com/id/100003114/device/rss/rss.html"),
+        RssNewsSource("CNBC", "https://www.cnbc.com/id/100003114/device/rss/rss.html", Topic.BUSINESS),
         // Technology and science
-        RssNewsSource("Ars Technica", "https://feeds.arstechnica.com/arstechnica/index"),
-        RssNewsSource("TechCrunch", "https://techcrunch.com/feed/"),
-        RssNewsSource("The Verge", "https://www.theverge.com/rss/index.xml"),
-        RssNewsSource("NASA", "https://www.nasa.gov/news-release/feed/"),
+        RssNewsSource("Ars Technica", "https://feeds.arstechnica.com/arstechnica/index", Topic.TECH),
+        RssNewsSource("TechCrunch", "https://techcrunch.com/feed/", Topic.TECH),
+        RssNewsSource("The Verge", "https://www.theverge.com/rss/index.xml", Topic.TECH),
+        RssNewsSource("NASA", "https://www.nasa.gov/news-release/feed/", Topic.SCIENCE),
         // Social
-        RedditSource("worldnews"),
+        RedditSource("worldnews", Topic.WORLD),
         RedditSource("news"),
-        RedditSource("technology"),
+        RedditSource("technology", Topic.TECH),
         HackerNewsSource(),
         MastodonTrendingPostsSource(),
         MastodonTrendingLinksSource(),

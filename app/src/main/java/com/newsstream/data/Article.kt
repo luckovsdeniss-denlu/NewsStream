@@ -21,6 +21,7 @@ data class Article(
     val engagement: Engagement? = null,
     /** Comment thread, when it lives somewhere other than [url] (e.g. a Reddit link post). */
     val discussionUrl: String? = null,
+    val topic: Topic = Topic.GENERAL,
 ) {
     /** Unique across sources: two platforms may share the same link. */
     val id: String get() = "$source|$url"

@@ -4,6 +4,7 @@ import android.net.Uri
 import com.newsstream.data.Article
 import com.newsstream.data.ContentKind
 import com.newsstream.data.Engagement
+import com.newsstream.data.TopicClassifier
 import org.json.JSONObject
 
 /** Bluesky's "Discover" (What's Hot) feed via the public AppView API; no login needed. */
@@ -39,6 +40,7 @@ class BlueskySource : NewsSource {
                     comments = post.optInt("replyCount"),
                     shares = post.optInt("repostCount"),
                 ),
+                topic = TopicClassifier.classify(text),
             )
         }
     }

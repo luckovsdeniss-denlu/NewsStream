@@ -2,7 +2,9 @@
 
 Android app skeleton (Kotlin, Jetpack Compose, Material 3).
 
-The home screen shows live headlines and social posts merged from many sources, newest first, with ALL / NEWS / SOCIAL filters; tap one to read it.
+The home screen shows live headlines and social posts merged from many sources, newest first, with ALL / NEWS / SOCIAL filters; tap one to read it. The **Topics** tab groups everything into World, Politics,
+Business, Technology, Science, Climate, Health, Sports, Culture and General (`data/Topic.kt`: source sections and
+feed categories first, then headline keywords, then each source's default topic).
 
 ## News sources
 Configured in `data/NewsRepository.kt`:
@@ -33,4 +35,4 @@ Every push to `main` gets a new version automatically: CI builds `versionName = 
 `baseVersion` in `app/build.gradle.kts` and the `0.1` prefix in the workflow.
 
 ## Roadmap
-- Images, categories, offline caching
+- Images, favourites, offline caching

@@ -3,6 +3,7 @@ package com.newsstream.data.source
 import com.newsstream.data.Article
 import com.newsstream.data.ContentKind
 import com.newsstream.data.Engagement
+import com.newsstream.data.TopicClassifier
 import org.json.JSONObject
 
 /** Trending public posts on a Mastodon server: https://docs.joinmastodon.org/methods/trends/ */
@@ -31,6 +32,7 @@ class MastodonTrendingPostsSource(private val server: String = "mastodon.social"
                     comments = status.optInt("replies_count"),
                     shares = status.optInt("reblogs_count"),
                 ),
+                topic = TopicClassifier.classify(text),
             )
         }
     }
@@ -46,17 +48,20 @@ class MastodonTrendingLinksSource(private val server: String = "mastodon.social"
             val link = links.getJSONObject(i)
             val title = link.optString("title").takeIf { it.isNotBlank() } ?: return@mapNotNull null
             val history = link.optJSONArray("history")
+            val cleanTitle = htmlToText(title)
+            val summary = htmlToText(link.optString("description"))
             val shares = (0 until (history?.length() ?: 0)).sumOf { history!!.getJSONObject(it).optString("uses").toIntOrNull() ?: 0 }
             Article(
                 url = link.getString("url"),
-                title = htmlToText(title),
-                summary = htmlToText(link.optString("description")),
+                title = cleanTitle,
+                summary = summary,
                 body = emptyList(),
                 source = name,
                 publishedAt = parseFeedDate(link.optString("published_at")),
                 kind = ContentKind.SOCIAL,
                 author = link.optStringOrNull("provider_name"),
                 engagement = Engagement(shares = shares),
+                topic = TopicClassifier.classify(cleanTitle, summary),
             )
         }
     }
