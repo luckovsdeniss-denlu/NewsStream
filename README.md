@@ -7,6 +7,11 @@ The home screen shows live headlines and social posts merged from many sources, 
 Business, Technology, Science, Climate, Health, Sports, Culture and General (`data/Topic.kt`: source sections and
 feed categories first, then headline keywords, then each source's default topic).
 
+## Loading
+Sources are fetched at most 10 at a time and each one appears as soon as it arrives (the header shows
+progress). The feed renders 10 stories at a time and adds the next 10 as you scroll. Switched-off sources
+are not downloaded.
+
 ## News sources
 Configured in `data/NewsRepository.kt`:
 - **The Guardian** Content API (full article text). Uses the public `test` key by default, which is

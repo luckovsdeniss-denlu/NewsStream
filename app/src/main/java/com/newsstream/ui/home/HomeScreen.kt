@@ -90,7 +90,9 @@ fun HomeScreen(
                                     append("LIVE · ")
                                     if (visible.size != state.articles.size) append("${visible.size} OF ")
                                     append("${state.articles.size} STORIES")
-                                    if (sourcesFiltered) {
+                                    if (state.isLoading) {
+                                        append(" · LOADING ${state.loadingTotal - state.loadingSources}/${state.loadingTotal}")
+                                    } else if (sourcesFiltered) {
                                         val shown = state.sources.count { it.name !in state.hiddenSources }
                                         append(" · $shown/${state.sources.size} SOURCES")
                                     }
@@ -145,6 +147,7 @@ fun HomeScreen(
                     },
                     onTopicClick = toggleTopic,
                     selectedTopics = selectedTopics,
+                    pageResetKey = "${filter.name}|$topicNames|${state.hiddenSources.sorted()}",
                 )
             }
         }

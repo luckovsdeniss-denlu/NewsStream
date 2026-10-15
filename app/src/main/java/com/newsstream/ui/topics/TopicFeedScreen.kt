@@ -83,6 +83,7 @@ fun TopicFeedScreen(
                 modifier = Modifier.padding(pad),
                 showTopic = false,
                 emptyMessage = "No ${topic.label.lowercase()} stories right now.",
+                pageResetKey = topic,
             )
         }
     }

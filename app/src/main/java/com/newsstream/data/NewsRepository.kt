@@ -13,12 +13,14 @@ import com.newsstream.data.source.NewsSource
 import com.newsstream.data.source.RedditSource
 import com.newsstream.data.source.RssNewsSource
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
-data class NewsResult(val articles: List<Article>, val failedSources: List<String>)
+data class SourceResult(val name: String, val articles: Result<List<Article>>)
 
 data class SourceInfo(val name: String, val kind: ContentKind, val category: Topic)
 
@@ -90,16 +92,21 @@ class NewsRepository(
     /** Every configured source, in display order. */
     val sourceInfo: List<SourceInfo> = sources.map { SourceInfo(it.name, it.kind, it.category) }
 
-    /** Fetches every source in parallel; a failing source is reported rather than failing the rest. */
-    suspend fun latest(): NewsResult = withContext(Dispatchers.IO) {
-        val results = coroutineScope {
-            sources.map { source -> async { source to runCatching { source.fetch() } } }.awaitAll()
+    /**
+     * Fetches the named sources, emitting each one's result as soon as it arrives so the UI can
+     * show articles without waiting for the slowest source. At most [MAX_PARALLEL_REQUESTS]
+     * requests run at once; a failing source is reported rather than failing the rest.
+     */
+    fun fetch(names: Set<String>): Flow<SourceResult> = channelFlow {
+        val permits = Semaphore(MAX_PARALLEL_REQUESTS)
+        sources.filter { it.name in names }.forEach { source ->
+            launch {
+                permits.withPermit { send(SourceResult(source.name, runCatching { source.fetch() })) }
+            }
         }
-        NewsResult(
-            articles = results.flatMap { (_, result) -> result.getOrDefault(emptyList()) }
-                .distinctBy { it.id }
-                .sortedByDescending { it.publishedAt },
-            failedSources = results.filter { (_, result) -> result.isFailure }.map { (source, _) -> source.name },
-        )
+    }.flowOn(Dispatchers.IO)
+
+    private companion object {
+        const val MAX_PARALLEL_REQUESTS = 10
     }
 }
