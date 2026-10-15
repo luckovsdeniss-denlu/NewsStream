@@ -1,6 +1,12 @@
 package com.newsstream.ui.home
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -11,7 +17,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Tune
@@ -35,24 +43,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
-import com.newsstream.data.ContentKind
 import com.newsstream.data.Topic
 import com.newsstream.ui.NewsUiState
 import com.newsstream.ui.components.ArticleFeed
 import com.newsstream.ui.components.SourceActions
 import com.newsstream.ui.components.SourcesSheet
 import com.newsstream.ui.icon
+import com.newsstream.ui.images.ImageGrid
 import com.newsstream.ui.theme.AppBackground
 
-private enum class Filter(val label: String, val kind: ContentKind?) {
-    ALL("All", null),
-    NEWS("News", ContentKind.NEWS),
-    SOCIAL("Social", ContentKind.SOCIAL),
+private enum class Mode(val label: String) {
+    NEWS("News"),
+    IMAGES("Images"),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,9 +71,8 @@ fun HomeScreen(
     onRefresh: () -> Unit,
     onArticleClick: (Article) -> Unit,
     sourceActions: SourceActions,
-    bottomBar: @Composable () -> Unit = {},
 ) {
-    var filter by rememberSaveable { mutableStateOf(Filter.ALL) }
+    var mode by rememberSaveable { mutableStateOf(Mode.NEWS) }
     var showSources by rememberSaveable { mutableStateOf(false) }
     if (showSources) {
         SourcesSheet(state, sourceActions, onDismiss = { showSources = false })
@@ -80,9 +88,8 @@ fun HomeScreen(
         topicNames = updated.joinToString(",") { it.name }
     }
 
-    val byKind = filter.kind?.let { kind -> state.articles.filter { it.kind == kind } } ?: state.articles
-    val topicCounts = remember(byKind) { byKind.groupingBy { it.topic }.eachCount() }
-    val visible = if (selectedTopics.isEmpty()) byKind else byKind.filter { it.topic in selectedTopics }
+    val topicCounts = remember(state.articles) { state.articles.groupingBy { it.topic }.eachCount() }
+    val visible = if (selectedTopics.isEmpty()) state.articles else state.articles.filter { it.topic in selectedTopics }
 
     AppBackground {
         Scaffold(
@@ -130,47 +137,55 @@ fun HomeScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 )
             },
-            bottomBar = bottomBar,
         ) { pad ->
             Column(Modifier.fillMaxSize().padding(pad)) {
                 FilterBar(
-                    kind = filter,
-                    onKindSelected = { filter = it },
+                    mode = mode,
+                    onModeSelected = { mode = it },
                     topicCounts = topicCounts,
                     selectedTopics = selectedTopics,
                     onToggleTopic = toggleTopic,
                     onClearTopics = { topicNames = "" },
                 )
-                ArticleFeed(
-                    articles = visible,
-                    isLoading = state.isLoading,
-                    failedSources = state.failedSources,
-                    onRefresh = onRefresh,
-                    onArticleClick = onArticleClick,
-                    emptyMessage = if (state.allArticles.isNotEmpty() && state.articles.isEmpty()) {
-                        "No sources selected. Tap the sources button to choose some."
-                    } else if (state.articles.isEmpty()) {
-                        "Couldn't load any news. Check your connection."
-                    } else {
-                        "No stories match these filters."
-                    },
-                    onTopicClick = toggleTopic,
-                    selectedTopics = selectedTopics,
-                    pageResetKey = "${filter.name}|$topicNames|${state.hiddenSources.sorted()}",
-                )
+                if (mode == Mode.IMAGES) {
+                    ImageGrid(
+                        articles = visible,
+                        isLoading = state.isLoading,
+                        onArticleClick = onArticleClick,
+                        resetKey = "$topicNames|${state.hiddenSources.sorted()}",
+                    )
+                } else {
+                    ArticleFeed(
+                        articles = visible,
+                        isLoading = state.isLoading,
+                        failedSources = state.failedSources,
+                        onRefresh = onRefresh,
+                        onArticleClick = onArticleClick,
+                        emptyMessage = if (state.allArticles.isNotEmpty() && state.articles.isEmpty()) {
+                            "No sources selected. Tap the sources button to choose some."
+                        } else if (state.articles.isEmpty()) {
+                            "Couldn't load any news. Check your connection."
+                        } else {
+                            "No stories match these filters."
+                        },
+                        onTopicClick = toggleTopic,
+                        selectedTopics = selectedTopics,
+                        pageResetKey = "$topicNames|${state.hiddenSources.sorted()}",
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * Two dropdown selectors side by side, so filters take one fixed row instead of scrolling:
- * content type (single choice) and topics (multiple choice, the menu stays open while ticking).
+ * One fixed row: a News / Images switch and the topics selector (multiple choice; the menu
+ * stays open while ticking). Topics apply to both views.
  */
 @Composable
 private fun FilterBar(
-    kind: Filter,
-    onKindSelected: (Filter) -> Unit,
+    mode: Mode,
+    onModeSelected: (Mode) -> Unit,
     topicCounts: Map<Topic, Int>,
     selectedTopics: Set<Topic>,
     onToggleTopic: (Topic) -> Unit,
@@ -180,22 +195,7 @@ private fun FilterBar(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.weight(1f)) {
-            var open by remember { mutableStateOf(false) }
-            SelectorButton("SHOW", kind.label, active = kind != Filter.ALL, onClick = { open = true })
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                Filter.entries.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.label) },
-                        onClick = {
-                            onKindSelected(option)
-                            open = false
-                        },
-                        leadingIcon = { CheckMark(option == kind) },
-                    )
-                }
-            }
-        }
+        ModeSwitch(mode, onModeSelected, Modifier.weight(1f))
         Box(Modifier.weight(1f)) {
             var open by remember { mutableStateOf(false) }
             val value = when (selectedTopics.size) {
@@ -222,6 +222,46 @@ private fun FilterBar(
                         leadingIcon = { Checkbox(checked = topic in selectedTopics, onCheckedChange = null) },
                         trailingIcon = { Icon(topic.icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
                         enabled = count > 0 || topic in selectedTopics,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Two-segment switch between the story list and the image grid. */
+@Composable
+private fun ModeSwitch(selected: Mode, onSelect: (Mode) -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        modifier
+            .height(48.dp)
+            .clip(shape)
+            .border(1.dp, MaterialTheme.colorScheme.outline, shape)
+            .padding(3.dp),
+    ) {
+        Mode.entries.forEach { option ->
+            val active = option == selected
+            Box(
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(17.dp))
+                    .background(if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                    .clickable { onSelect(option) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(
+                        if (option == Mode.NEWS) Icons.Filled.Newspaper else Icons.Filled.PhotoLibrary,
+                        contentDescription = null,
+                        tint = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        option.label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
                     )
                 }
             }

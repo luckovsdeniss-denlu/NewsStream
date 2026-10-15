@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.HideImage
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
@@ -50,8 +48,6 @@ import com.newsstream.data.ContentKind
 import com.newsstream.data.source.PageImageFinder
 import com.newsstream.ui.EngagementRow
 import com.newsstream.ui.byline
-import com.newsstream.ui.publishedTime
-import com.newsstream.ui.relativeTime
 import com.newsstream.ui.theme.AppBackground
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -93,7 +89,6 @@ fun ArticleScreen(article: Article, onBack: () -> Unit) {
                     },
                 )
                 Text(article.byline().uppercase(), style = MaterialTheme.typography.labelMedium, color = accent)
-                PublishedBlock(article)
                 article.engagement?.let { EngagementRow(it) }
                 ArticleImage(article)
                 Box(Modifier.fillMaxWidth().height(1.dp).background(accent.copy(alpha = 0.5f)))
@@ -117,30 +112,6 @@ fun ArticleScreen(article: Article, onBack: () -> Unit) {
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-/** The publish date and time in a panel of its own. */
-@Composable
-private fun PublishedBlock(article: Article) {
-    val full = article.publishedTime(LocalContext.current, full = true)
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Icon(Icons.Filled.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
-        Column {
-            Text("PUBLISHED", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-            Text(full ?: "Unknown", style = MaterialTheme.typography.bodyMedium)
-            article.relativeTime()?.let {
-                Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

@@ -2,10 +2,10 @@
 
 Android app skeleton (Kotlin, Jetpack Compose, Material 3).
 
-The home screen shows live headlines and social posts merged from many sources, newest first, with Show (All / News / Social) and Topics dropdown filters; each card shows its publish time in a
-separate badge. Tap a story to read it; SHOW IMAGE loads its picture on demand (from the feed, or the
-article page's preview image). The sources button in the top bar picks which sources to show
-(saved across restarts; applies to every screen). The **Topics** tab groups everything into World, Politics,
+The home screen shows live headlines and social posts merged from many sources, newest first, with a News / Images switch and a Topics selector. Images shows a grid of the pictures attached to
+stories in the selected topics; thumbnails are prefetched as each source arrives and cached in memory and on
+disk, so the grid appears instantly. Tap a story to read it; SHOW IMAGE loads its picture on demand. The sources button in the top bar picks which sources to show
+(saved across restarts; applies to every screen). Stories are grouped into World, Politics,
 Business, Technology, Science, Climate, Health, Sports, Culture and General (`data/Topic.kt`: source sections and
 feed categories first, then headline keywords, then each source's default topic).
 

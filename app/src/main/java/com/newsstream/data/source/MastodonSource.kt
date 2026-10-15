@@ -34,9 +34,9 @@ class MastodonTrendingPostsSource(private val server: String = "mastodon.social"
                     shares = status.optInt("reblogs_count"),
                 ),
                 topic = TopicClassifier.classify(text),
-                imageUrl = status.optJSONArray("media_attachments")?.optJSONObject(0)
-                    ?.takeIf { it.optString("type") == "image" }?.optStringOrNull("preview_url")
+                imageUrl = firstImage(status)?.optStringOrNull("url")
                     ?: status.optJSONObject("card")?.optStringOrNull("image"),
+                thumbnailUrl = firstImage(status)?.optStringOrNull("preview_url"),
             )
         }
     }
@@ -72,6 +72,9 @@ class MastodonTrendingLinksSource(private val server: String = "mastodon.social"
         }
     }
 }
+
+private fun firstImage(status: JSONObject): JSONObject? =
+    status.optJSONArray("media_attachments")?.optJSONObject(0)?.takeIf { it.optString("type") == "image" }
 
 internal fun JSONObject.optStringOrNull(key: String): String? =
     if (isNull(key)) null else optString(key).takeIf { it.isNotBlank() }

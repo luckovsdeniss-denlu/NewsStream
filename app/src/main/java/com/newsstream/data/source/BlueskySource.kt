@@ -42,17 +42,20 @@ class BlueskySource : NewsSource {
                     shares = post.optInt("repostCount"),
                 ),
                 topic = TopicClassifier.classify(text),
-                imageUrl = embedImage(post.optJSONObject("embed")),
+                imageUrl = embedImage(post.optJSONObject("embed"), "fullsize"),
+                thumbnailUrl = embedImage(post.optJSONObject("embed"), "thumb"),
             )
         }
     }
 
     // Image posts carry thumbnails in embed.images; link cards in embed.external.
-    private fun embedImage(embed: JSONObject?): String? {
+    private fun embedImage(embed: JSONObject?, size: String): String? {
         if (embed == null) return null
-        embed.optJSONArray("images")?.optJSONObject(0)?.optStringOrNull("thumb")?.let { return it }
+        embed.optJSONArray("images")?.optJSONObject(0)?.let { image ->
+            (image.optStringOrNull(size) ?: image.optStringOrNull("thumb"))?.let { return it }
+        }
         embed.optJSONObject("external")?.optStringOrNull("thumb")?.let { return it }
-        return embedImage(embed.optJSONObject("media"))
+        return embedImage(embed.optJSONObject("media"), size)
     }
 
     private companion object {

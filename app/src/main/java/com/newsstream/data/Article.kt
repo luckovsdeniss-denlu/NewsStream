@@ -24,7 +24,12 @@ data class Article(
     val topic: Topic = Topic.GENERAL,
     /** Lead image, when the source provides one; otherwise found on demand from the page. */
     val imageUrl: String? = null,
+    /** A smaller version of the image, when the source offers one; preferred for grids. */
+    val thumbnailUrl: String? = null,
 ) {
+    /** Best image for small tiles: the thumbnail if there is one, else the full image. */
+    val gridImageUrl: String? get() = thumbnailUrl ?: imageUrl
+
     /** Unique across sources: two platforms may share the same link. */
     val id: String get() = "$source|$url"
 }

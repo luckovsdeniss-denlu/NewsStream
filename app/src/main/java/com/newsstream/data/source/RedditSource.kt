@@ -56,12 +56,19 @@ class RedditSource(
                 engagement = Engagement(likes = post.optInt("score"), comments = post.optInt("num_comments")),
                 discussionUrl = thread,
                 topic = TopicClassifier.classify(title, summary, post.optString("link_flair_text"), defaultTopic),
-                imageUrl = post.optJSONObject("preview")?.optJSONArray("images")?.optJSONObject(0)
-                    ?.optJSONObject("source")?.optStringOrNull("url")
+                imageUrl = previewImage(post)?.optJSONObject("source")?.optStringOrNull("url")
                     ?: post.optStringOrNull("thumbnail")?.takeIf { it.startsWith("http") },
+                thumbnailUrl = previewImage(post)?.optJSONArray("resolutions")?.let { sizes ->
+                    // Smallest resolution at least 480px wide, else the largest available.
+                    val all = (0 until sizes.length()).map { sizes.getJSONObject(it) }
+                    (all.firstOrNull { it.optInt("width") >= 480 } ?: all.lastOrNull())?.optStringOrNull("url")
+                },
             )
         }
     }
+
+    private fun previewImage(post: JSONObject): JSONObject? =
+        post.optJSONObject("preview")?.optJSONArray("images")?.optJSONObject(0)
 
     private companion object {
         // Reddit asks API clients for a unique, descriptive User-Agent.

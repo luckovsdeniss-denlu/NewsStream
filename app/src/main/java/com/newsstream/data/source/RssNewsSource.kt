@@ -72,7 +72,8 @@ class RssNewsSource(
         val medium = parser.getAttributeValue(null, "medium").orEmpty()
         val isImage = parser.name == "media:thumbnail" || medium == "image" || type.startsWith("image") ||
             (type.isEmpty() && medium.isEmpty() && IMAGE_EXTENSION.containsMatchIn(url))
-        if (isImage) fields.putIfAbsent("image", url.trim())
+        if (!isImage) return
+        fields.putIfAbsent(if (parser.name == "media:thumbnail") "thumb" else "image", url.trim())
     }
 
     private fun Map<String, String>.toArticle(): Article? {
@@ -83,7 +84,7 @@ class RssNewsSource(
         val rawSummary = this["description"] ?: this["summary"].orEmpty()
         val summary = htmlToText(rawSummary)
         // Many feeds embed the lead image as an <img> in the description instead.
-        val image = this["image"] ?: INLINE_IMAGE.find(rawSummary)?.groupValues?.get(1)
+        val image = this["image"] ?: INLINE_IMAGE.find(rawSummary)?.groupValues?.get(1) ?: this["thumb"]
         return Article(
             url = link,
             title = cleanTitle,
@@ -93,6 +94,7 @@ class RssNewsSource(
             publishedAt = parseFeedDate(date.orEmpty()),
             author = (this["dc:creator"] ?: this["name"])?.takeIf { it.isNotBlank() },
             imageUrl = image?.replace("&amp;", "&"),
+            thumbnailUrl = this["thumb"]?.replace("&amp;", "&"),
             topic = TopicClassifier.classify(cleanTitle, summary, this["category"].orEmpty(), defaultTopic),
         )
     }

@@ -7,6 +7,8 @@ import com.newsstream.data.Article
 import com.newsstream.data.NewsRepository
 import com.newsstream.data.SourceInfo
 import com.newsstream.data.SourcePreferences
+import com.newsstream.ui.images.thumbnailRequest
+import coil.imageLoader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -89,12 +91,25 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
                     .onSuccess {
                         articlesBySource[result.name] = it
                         failed -= result.name
+                        prefetchImages(it)
                     }
                     // Keep showing a source's previous articles if a refresh fails.
                     .onFailure { failed += result.name }
                 publish()
             }
         }
+    }
+
+    /**
+     * Warms the image cache with a source's newest thumbnails as soon as it arrives, so the
+     * Images view shows them instantly instead of loading on scroll.
+     */
+    private fun prefetchImages(articles: List<Article>) {
+        val context = getApplication<Application>()
+        articles.asSequence()
+            .mapNotNull { it.gridImageUrl }
+            .take(PREFETCH_PER_SOURCE)
+            .forEach { context.imageLoader.enqueue(thumbnailRequest(context, it)) }
     }
 
     private fun publish() {
@@ -114,5 +129,9 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     private fun setHidden(hidden: Set<String>) {
         preferences.hiddenSources = hidden
         _state.update { it.copy(hiddenSources = hidden) }
+    }
+
+    private companion object {
+        const val PREFETCH_PER_SOURCE = 8
     }
 }
