@@ -5,7 +5,7 @@ import com.newsstream.data.Article
 import com.newsstream.data.Topic
 import com.newsstream.data.TopicClassifier
 import org.xmlpull.v1.XmlPullParser
-import java.io.StringReader
+import java.io.ByteArrayInputStream
 
 /**
  * Reads an RSS 2.0, RSS 1.0 (RDF) or Atom feed. Feeds carry headlines and summaries only,
@@ -17,13 +17,16 @@ class RssNewsSource(
     /** Topic for items that no keyword or category places elsewhere. */
     private val defaultTopic: Topic = Topic.WORLD,
     private val headers: Map<String, String> = emptyMap(),
+    override val language: String = "en",
 ) : NewsSource {
     override val category = defaultTopic
 
     override fun fetch(): List<Article> {
         val parser = Xml.newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-        parser.setInput(StringReader(httpGet(feedUrl, headers)))
+        // Feed bytes plus a null encoding let the parser honour the XML declaration
+        // (some Russian feeds are windows-1251, not UTF-8).
+        parser.setInput(ByteArrayInputStream(httpGetBytes(feedUrl, headers)), null)
 
         val articles = mutableListOf<Article>()
         var fields: MutableMap<String, String>? = null

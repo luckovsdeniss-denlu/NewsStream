@@ -25,7 +25,7 @@ import java.io.File
 
 data class SourceResult(val name: String, val articles: Result<List<Article>>)
 
-data class SourceInfo(val name: String, val kind: ContentKind, val category: Topic)
+data class SourceInfo(val name: String, val kind: ContentKind, val category: Topic, val language: String)
 
 class NewsRepository(cacheDir: File) {
     private val sources: List<NewsSource> = listOf(
@@ -80,6 +80,23 @@ class NewsRepository(cacheDir: File) {
         // Culture
         RssNewsSource("Variety", "https://variety.com/feed/", Topic.CULTURE),
         RssNewsSource("Rolling Stone", "https://www.rollingstone.com/feed/", Topic.CULTURE),
+        // Russian-language news
+        RssNewsSource("BBC Русская служба", "https://feeds.bbci.co.uk/russian/rss.xml", language = "ru"),
+        RssNewsSource("DW на русском", "https://rss.dw.com/rdf/rss-ru-all", language = "ru"),
+        RssNewsSource("Euronews на русском", "https://ru.euronews.com/rss", language = "ru"),
+        RssNewsSource("Meduza", "https://meduza.io/rss/all", language = "ru"),
+        RssNewsSource("Новая газета Европа", "https://novayagazeta.eu/feed/rss", language = "ru"),
+        RssNewsSource("The Insider", "https://theins.ru/feed", Topic.POLITICS, language = "ru"),
+        RssNewsSource("РБК", "https://rssexport.rbc.ru/rbcnews/news/30/full.rss", Topic.BUSINESS, language = "ru"),
+        RssNewsSource("Коммерсантъ", "https://www.kommersant.ru/RSS/main.xml", language = "ru"),
+        RssNewsSource("Ведомости", "https://www.vedomosti.ru/rss/news", Topic.BUSINESS, language = "ru"),
+        RssNewsSource("Интерфакс", "https://www.interfax.ru/rss.asp", language = "ru"),
+        RssNewsSource("ТАСС", "https://tass.ru/rss/v2.xml", language = "ru"),
+        RssNewsSource("РИА Новости", "https://ria.ru/export/rss2/archive/index.xml", language = "ru"),
+        RssNewsSource("Лента.ру", "https://lenta.ru/rss", language = "ru"),
+        RssNewsSource("Фонтанка", "https://www.fontanka.ru/fontanka.rss", language = "ru"),
+        RssNewsSource("Хабр", "https://habr.com/ru/rss/articles/?fl=ru", Topic.TECH, language = "ru"),
+        GoogleNewsSource("Google Новости", "hl=ru&gl=RU&ceid=RU:ru", language = "ru"),
         // Social
         RedditSource("worldnews", Topic.WORLD),
         RedditSource("news"),
@@ -93,7 +110,7 @@ class NewsRepository(cacheDir: File) {
     ) + gnewsSources(ResponseCache(File(cacheDir, "api_responses")))
 
     /** Every configured source, in display order. */
-    val sourceInfo: List<SourceInfo> = sources.map { SourceInfo(it.name, it.kind, it.category) }
+    val sourceInfo: List<SourceInfo> = sources.map { SourceInfo(it.name, it.kind, it.category, it.language) }
 
     /**
      * Fetches the named sources, emitting each one's result as soon as it arrives so the UI can
@@ -125,7 +142,8 @@ class NewsRepository(cacheDir: File) {
                 Triple("health", "Health", Topic.HEALTH),
                 Triple("sports", "Sports", Topic.SPORTS),
                 Triple("entertainment", "Entertainment", Topic.CULTURE),
-            ).map { (category, label, topic) -> GNewsSource(category, label, topic, key, cache) }
+            ).map { (category, label, topic) -> GNewsSource(category, label, topic, key, cache) } +
+                GNewsSource("general", "Русский", Topic.GENERAL, key, cache, language = "ru")
         }
     }
 }

@@ -34,6 +34,10 @@ Configured in `data/NewsRepository.kt`:
 - **GNews.io** (optional, needs a free key): top headlines in 8 categories, with images. Add the key as the
   `GNEWS_API_KEY` repository secret. The free plan allows ~100 requests/day, so each category is a separate
   source (switch off the ones you don't need) and responses are cached on the device for 30 minutes.
+- Russian-language news (RSS, no key): BBC Русская служба, DW на русском, Euronews на русском, Meduza,
+  Новая газета Европа, The Insider, РБК, Коммерсантъ, Ведомости, Интерфакс, ТАСС, РИА Новости, Лента.ру,
+  Фонтанка, Хабр, Google Новости; plus GNews Russian headlines when a GNews key is set. The sources sheet has an
+  All / English / Русский quick filter, and topic keywords cover Russian too.
 - Social (posts with author and likes/comments/shares), no key needed:
   - Reddit (r/worldnews, r/news, r/technology). Reddit blocks anonymous API access, so by default these use the
     public subreddit feeds (headlines only). For scores and comment counts, create an "installed app" at

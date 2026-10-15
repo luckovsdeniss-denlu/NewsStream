@@ -20,14 +20,16 @@ class GNewsSource(
     override val category: Topic,
     private val apiKey: String,
     private val cache: ResponseCache,
+    /** GNews language code, e.g. "en" or "ru". */
+    override val language: String = "en",
 ) : NewsSource {
     override val name = "GNews · $label"
 
     override fun fetch(): List<Article> {
-        val key = "gnews_$gnewsCategory"
+        val key = "gnews_${language}_$gnewsCategory"
         val body = cache.read(key, CACHE_MINUTES * 60_000L) ?: try {
             httpGet(
-                "https://gnews.io/api/v4/top-headlines?category=$gnewsCategory&lang=en&max=10&apikey=$apiKey",
+                "https://gnews.io/api/v4/top-headlines?category=$gnewsCategory&lang=$language&max=10&apikey=$apiKey",
             ).also { cache.write(key, it) }
         } catch (e: IOException) {
             cache.read(key) ?: throw e

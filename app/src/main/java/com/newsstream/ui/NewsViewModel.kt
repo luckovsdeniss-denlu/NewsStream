@@ -67,6 +67,12 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
 
     fun hideAllSources() = setHidden(_state.value.sources.map { it.name }.toSet())
 
+    fun showLanguage(language: String?) {
+        val sources = _state.value.sources
+        setHidden(if (language == null) emptySet() else sources.filter { it.language != language }.map { it.name }.toSet())
+        loadIfMissing(visibleSourceNames())
+    }
+
     private fun visibleSourceNames() =
         _state.value.sources.map { it.name }.filter { it !in _state.value.hiddenSources }
 

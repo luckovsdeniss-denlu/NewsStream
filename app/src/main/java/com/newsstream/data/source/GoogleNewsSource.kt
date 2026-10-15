@@ -7,12 +7,15 @@ import com.newsstream.data.Topic
  * Google News top stories. Its feed titles read "Headline - Publisher", so the publisher is
  * split off into the author line.
  */
-class GoogleNewsSource(private val edition: String = "hl=en-US&gl=US&ceid=US:en") : NewsSource {
-    override val name = "Google News"
+class GoogleNewsSource(
+    override val name: String = "Google News",
+    private val edition: String = "hl=en-US&gl=US&ceid=US:en",
+    override val language: String = "en",
+) : NewsSource {
     override val category = Topic.GENERAL
 
     override fun fetch(): List<Article> =
-        RssNewsSource(name, "https://news.google.com/rss?$edition", Topic.GENERAL).fetch().map { article ->
+        RssNewsSource(name, "https://news.google.com/rss?$edition", Topic.GENERAL, language = language).fetch().map { article ->
             val split = article.title.lastIndexOf(" - ")
             if (split <= 0) {
                 article

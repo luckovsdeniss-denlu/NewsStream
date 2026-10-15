@@ -25,54 +25,73 @@ object TopicClassifier {
             "world", "war", "ukraine", "russia", "gaza", "israel", "iran", "china", "military", "troops",
             "refugee", "united nations", "nato", "ceasefire", "embassy", "border", "protest", "conflict",
             "missile", "invasion", "hostage", "africa", "middle east", "europe", "asia",
+            // Russian
+            "войн", "украин", "израил", "сектор газа", "иран", "китай", "нато", "оон", "беженц", "ракетн", "обстрел", "переговор", "конфликт", "вторжени", "заложник", "европ", "ближн",
         ),
         Topic.POLITICS to listOf(
             "politic", "election", "parliament", "senate", "congress", "president", "prime minister",
             "minister", "government", "vote", "voter", "campaign", "democrat", "republican", "labour",
             "conservative", "lawmaker", "white house", "kremlin", "legislation", "supreme court", "policy",
             "diplomat", "sanction", "governor", "mayor",
+            // Russian
+            "политик", "выбор", "президент", "госдум", "парламент", "правительств", "министр", "депутат", "законопроект", "кремл", "оппозици", "губернатор", "мэр", "санкци", "дипломат", "суд",
         ),
         Topic.BUSINESS to listOf(
             "business", "market", "stock", "shares", "economy", "economic", "inflation", "interest rate",
             "bank", "earnings", "profit", "revenue", "investor", "trade", "tariff", "ipo", "ceo",
             "wall street", "finance", "financial", "crypto", "bitcoin", "recession", "gdp", "merger",
             "acquisition", "layoff", "retail", "oil price",
+            // Russian
+            "бизнес", "рубл", "доллар", "курс валют", "бирж", "акци", "экономик", "инфляци", "банк", "ставк", "нефт", "газпром", "компани", "рынок", "налог", "бюджет", "ввп", "инвест",
         ),
         Topic.TECH to listOf(
             "tech", "ai", "artificial intelligence", "software", "app", "apps", "apple", "google",
             "microsoft", "openai", "chip", "semiconductor", "smartphone", "iphone", "android", "cyber",
             "hacker", "hacked", "data breach", "robot", "computer", "internet", "linux", "programming",
             "nvidia", "gpu", "startup", "silicon valley", "algorithm", "developer", "open source", "browser",
+            // Russian
+            "технолог", "смартфон", "приложени", "интернет", "искусственн", "нейросет", "ии", "хакер", "кибер", "яндекс", "программ", "робот", "чип", "телеграм", "разработчик",
         ),
         Topic.SCIENCE to listOf(
             "science", "scientist", "nasa", "space", "planet", "astronom", "research", "physics",
             "telescope", "mars", "moon", "rocket", "spacex", "dinosaur", "fossil", "species", "quantum",
             "genome", "galaxy", "asteroid", "biolog", "chemist", "satellite", "orbit",
+            // Russian
+            "наук", "учен", "космос", "космическ", "роскосмос", "наса", "планет", "исследовани", "астроном", "спутник", "луна", "марс", "физик",
         ),
         Topic.CLIMATE to listOf(
             "climate", "emission", "carbon", "global warming", "wildfire", "flood", "hurricane", "storm",
             "drought", "heatwave", "renewable", "solar power", "wind power", "environment", "pollution",
             "fossil fuel", "biodiversity", "deforestation", "glacier", "sea level",
+            // Russian
+            "климат", "наводнени", "пожар", "засух", "ураган", "шторм", "экологи", "выброс", "землетрясени", "жара",
         ),
         Topic.HEALTH to listOf(
             "health", "hospital", "disease", "virus", "vaccine", "covid", "cancer", "medical", "medicine",
             "doctor", "patient", "outbreak", "pandemic", "fda", "mental health", "obesity", "nhs",
             "diabetes", "infection", "surgery", "drug",
+            // Russian
+            "здоров", "больниц", "врач", "медицин", "вирус", "вакцин", "ковид", "онколог", "пациент", "эпидеми", "лекарств", "минздрав",
         ),
         Topic.SPORTS to listOf(
             "sport", "football", "soccer", "nba", "nfl", "tennis", "cricket", "olympic", "world cup",
             "premier league", "championship", "tournament", "coach", "formula 1", "f1", "golf", "rugby",
             "baseball", "basketball", "athlete", "striker", "quarterback", "grand prix", "uefa", "fifa",
+            // Russian
+            "спорт", "футбол", "хоккей", "теннис", "матч", "чемпионат", "олимпи", "турнир", "сборн", "тренер", "кхл", "рпл", "фифа", "уефа", "гол",
         ),
         Topic.CULTURE to listOf(
             "culture", "film", "movie", "music", "album", "singer", "actor", "actress", "celebrity",
             "tv series", "netflix", "hollywood", "box office", "festival", "oscar", "grammy",
             "video game", "gaming", "book", "novel", "artist", "museum", "fashion", "theatre", "theater",
             "television", "streaming",
+            // Russian
+            "культур", "фильм", "кино", "музык", "певиц", "певец", "актер", "актёр", "актрис", "сериал", "театр", "выставк", "концерт", "книг", "писател", "музей", "фестивал",
         ),
     )
 
-    // Short keywords ("ai", "app") must match whole words; longer ones may match as prefixes
+    // Keywords are English and Russian (stems, so "выбор" also matches "выборы").
+    // Short keywords ("ai", "app", "ии") must match whole words; longer ones may match as prefixes
     // so "election" also catches "elections".
     private val PATTERNS: Map<Topic, List<Regex>> = KEYWORDS.mapValues { (_, words) ->
         words.map { word ->

@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
                             setVisible = newsViewModel::setSourceVisible,
                             showAll = newsViewModel::showAllSources,
                             hideAll = newsViewModel::hideAllSources,
+                            showLanguage = newsViewModel::showLanguage,
                         ),
                     )
                 }
