@@ -34,7 +34,7 @@ data class NewsUiState(
 }
 
 class NewsViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = NewsRepository()
+    private val repository = NewsRepository(application.cacheDir)
     private val preferences = SourcePreferences(application)
 
     // Only touched on the main thread (viewModelScope collects there).

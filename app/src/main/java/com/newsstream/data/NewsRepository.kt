@@ -2,6 +2,7 @@ package com.newsstream.data
 
 import com.newsstream.BuildConfig
 import com.newsstream.data.source.BlueskySource
+import com.newsstream.data.source.GNewsSource
 import com.newsstream.data.source.GoogleNewsSource
 import com.newsstream.data.source.GuardianNewsSource
 import com.newsstream.data.source.HackerNewsSource
@@ -11,6 +12,7 @@ import com.newsstream.data.source.MastodonTrendingLinksSource
 import com.newsstream.data.source.MastodonTrendingPostsSource
 import com.newsstream.data.source.NewsSource
 import com.newsstream.data.source.RedditSource
+import com.newsstream.data.source.ResponseCache
 import com.newsstream.data.source.RssNewsSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -19,12 +21,13 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import java.io.File
 
 data class SourceResult(val name: String, val articles: Result<List<Article>>)
 
 data class SourceInfo(val name: String, val kind: ContentKind, val category: Topic)
 
-class NewsRepository(
+class NewsRepository(cacheDir: File) {
     private val sources: List<NewsSource> = listOf(
         // World
         GuardianNewsSource(BuildConfig.GUARDIAN_API_KEY),
@@ -87,8 +90,8 @@ class NewsRepository(
         MastodonTrendingPostsSource(),
         MastodonTrendingLinksSource(),
         BlueskySource(),
-    ),
-) {
+    ) + gnewsSources(ResponseCache(File(cacheDir, "api_responses")))
+
     /** Every configured source, in display order. */
     val sourceInfo: List<SourceInfo> = sources.map { SourceInfo(it.name, it.kind, it.category) }
 
@@ -108,5 +111,21 @@ class NewsRepository(
 
     private companion object {
         const val MAX_PARALLEL_REQUESTS = 10
+
+        /** GNews categories, only when a GNEWS_API_KEY was configured at build time. */
+        fun gnewsSources(cache: ResponseCache): List<NewsSource> {
+            val key = BuildConfig.GNEWS_API_KEY
+            if (key.isBlank()) return emptyList()
+            return listOf(
+                Triple("general", "Top stories", Topic.GENERAL),
+                Triple("world", "World", Topic.WORLD),
+                Triple("business", "Business", Topic.BUSINESS),
+                Triple("technology", "Technology", Topic.TECH),
+                Triple("science", "Science", Topic.SCIENCE),
+                Triple("health", "Health", Topic.HEALTH),
+                Triple("sports", "Sports", Topic.SPORTS),
+                Triple("entertainment", "Entertainment", Topic.CULTURE),
+            ).map { (category, label, topic) -> GNewsSource(category, label, topic, key, cache) }
+        }
     }
 }
