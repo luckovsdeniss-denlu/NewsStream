@@ -10,6 +10,7 @@ import org.json.JSONObject
 /** Hot posts of a subreddit via Reddit's public JSON listing. */
 class RedditSource(private val subreddit: String, private val defaultTopic: Topic = Topic.GENERAL) : NewsSource {
     override val name = "Reddit r/$subreddit"
+    override val kind = ContentKind.SOCIAL
 
     override fun fetch(): List<Article> {
         val children = JSONObject(httpGet("https://www.reddit.com/r/$subreddit/hot.json?limit=30&raw_json=1"))

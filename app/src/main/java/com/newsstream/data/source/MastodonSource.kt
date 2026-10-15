@@ -9,6 +9,7 @@ import org.json.JSONObject
 /** Trending public posts on a Mastodon server: https://docs.joinmastodon.org/methods/trends/ */
 class MastodonTrendingPostsSource(private val server: String = "mastodon.social") : NewsSource {
     override val name = "Mastodon"
+    override val kind = ContentKind.SOCIAL
 
     override fun fetch(): List<Article> {
         val statuses = org.json.JSONArray(httpGet("https://$server/api/v1/trends/statuses?limit=30"))
@@ -41,6 +42,7 @@ class MastodonTrendingPostsSource(private val server: String = "mastodon.social"
 /** News links trending on a Mastodon server, ranked by how often they are shared. */
 class MastodonTrendingLinksSource(private val server: String = "mastodon.social") : NewsSource {
     override val name = "Mastodon Trending"
+    override val kind = ContentKind.SOCIAL
 
     override fun fetch(): List<Article> {
         val links = org.json.JSONArray(httpGet("https://$server/api/v1/trends/links?limit=20"))

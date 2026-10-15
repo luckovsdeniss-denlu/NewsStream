@@ -14,6 +14,7 @@ import com.newsstream.data.Topic
 import com.newsstream.ui.NewsViewModel
 import com.newsstream.ui.article.ArticleScreen
 import com.newsstream.ui.components.AppNavBar
+import com.newsstream.ui.components.SourceActions
 import com.newsstream.ui.components.Tab
 import com.newsstream.ui.home.HomeScreen
 import com.newsstream.ui.theme.NewsStreamTheme
@@ -49,6 +50,12 @@ class MainActivity : ComponentActivity() {
                         state = state,
                         onRefresh = newsViewModel::refresh,
                         onArticleClick = { openArticleId = it.id },
+                        sourceActions = SourceActions(
+                            setVisible = newsViewModel::setSourceVisible,
+                            showAll = newsViewModel::showAllSources,
+                            hideAll = newsViewModel::hideAllSources,
+                            showOnly = newsViewModel::showOnlySource,
+                        ),
                         bottomBar = navBar,
                     )
                     topic != null -> TopicFeedScreen(

@@ -17,6 +17,8 @@ import kotlinx.coroutines.withContext
 
 data class NewsResult(val articles: List<Article>, val failedSources: List<String>)
 
+data class SourceInfo(val name: String, val kind: ContentKind)
+
 class NewsRepository(
     private val sources: List<NewsSource> = listOf(
         // World
@@ -46,6 +48,9 @@ class NewsRepository(
         BlueskySource(),
     ),
 ) {
+    /** Every configured source, in display order. */
+    val sourceInfo: List<SourceInfo> = sources.map { SourceInfo(it.name, it.kind) }
+
     /** Fetches every source in parallel; a failing source is reported rather than failing the rest. */
     suspend fun latest(): NewsResult = withContext(Dispatchers.IO) {
         val results = coroutineScope {

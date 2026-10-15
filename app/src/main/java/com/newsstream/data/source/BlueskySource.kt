@@ -10,6 +10,7 @@ import org.json.JSONObject
 /** Bluesky's "Discover" (What's Hot) feed via the public AppView API; no login needed. */
 class BlueskySource : NewsSource {
     override val name = "Bluesky"
+    override val kind = ContentKind.SOCIAL
 
     override fun fetch(): List<Article> {
         val url = Uri.parse("https://public.api.bsky.app/xrpc/app.bsky.feed.getFeed").buildUpon()

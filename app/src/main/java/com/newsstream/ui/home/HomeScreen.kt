@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -35,6 +36,8 @@ import com.newsstream.data.ContentKind
 import com.newsstream.data.Topic
 import com.newsstream.ui.NewsUiState
 import com.newsstream.ui.components.ArticleFeed
+import com.newsstream.ui.components.SourceActions
+import com.newsstream.ui.components.SourcesSheet
 import com.newsstream.ui.icon
 import com.newsstream.ui.theme.AppBackground
 
@@ -50,9 +53,15 @@ fun HomeScreen(
     state: NewsUiState,
     onRefresh: () -> Unit,
     onArticleClick: (Article) -> Unit,
+    sourceActions: SourceActions,
     bottomBar: @Composable () -> Unit = {},
 ) {
     var filter by rememberSaveable { mutableStateOf(Filter.ALL) }
+    var showSources by rememberSaveable { mutableStateOf(false) }
+    if (showSources) {
+        SourcesSheet(state, sourceActions, onDismiss = { showSources = false })
+    }
+    val sourcesFiltered = state.hiddenSources.isNotEmpty()
     // Selected topics, saved as comma-separated enum names so they survive rotation.
     var topicNames by rememberSaveable { mutableStateOf("") }
     val selectedTopics = remember(topicNames) {
@@ -77,10 +86,14 @@ fun HomeScreen(
                         Column {
                             Text("NEWSSTREAM", color = MaterialTheme.colorScheme.primary)
                             Text(
-                                if (visible.size == state.articles.size) {
-                                    "LIVE · ${state.articles.size} STORIES"
-                                } else {
-                                    "LIVE · ${visible.size} OF ${state.articles.size} STORIES"
+                                buildString {
+                                    append("LIVE · ")
+                                    if (visible.size != state.articles.size) append("${visible.size} OF ")
+                                    append("${state.articles.size} STORIES")
+                                    if (sourcesFiltered) {
+                                        val shown = state.sources.count { it.name !in state.hiddenSources }
+                                        append(" · $shown/${state.sources.size} SOURCES")
+                                    }
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.secondary,
@@ -88,6 +101,18 @@ fun HomeScreen(
                         }
                     },
                     actions = {
+                        IconButton(onClick = { showSources = true }) {
+                            Icon(
+                                Icons.Filled.Tune,
+                                contentDescription = "Choose sources",
+                                // Highlighted while some sources are switched off.
+                                tint = if (sourcesFiltered) {
+                                    MaterialTheme.colorScheme.secondary
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                },
+                            )
+                        }
                         IconButton(onClick = onRefresh, enabled = !state.isLoading) {
                             Icon(Icons.Filled.Refresh, contentDescription = "Refresh", tint = MaterialTheme.colorScheme.primary)
                         }
@@ -111,7 +136,9 @@ fun HomeScreen(
                     failedSources = state.failedSources,
                     onRefresh = onRefresh,
                     onArticleClick = onArticleClick,
-                    emptyMessage = if (state.articles.isEmpty()) {
+                    emptyMessage = if (state.allArticles.isNotEmpty() && state.articles.isEmpty()) {
+                        "No sources selected. Tap the sources button to choose some."
+                    } else if (state.articles.isEmpty()) {
                         "Couldn't load any news. Check your connection."
                     } else {
                         "No stories match these filters."

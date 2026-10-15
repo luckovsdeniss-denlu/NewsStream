@@ -10,6 +10,7 @@ import org.json.JSONObject
 /** Hacker News front page via the Algolia HN Search API: https://hn.algolia.com/api */
 class HackerNewsSource : NewsSource {
     override val name = "Hacker News"
+    override val kind = ContentKind.SOCIAL
 
     override fun fetch(): List<Article> {
         val hits = JSONObject(httpGet("https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=30"))
