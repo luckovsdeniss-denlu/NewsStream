@@ -17,7 +17,9 @@ Configured in `data/NewsRepository.kt`:
   - Business: CNBC
   - Technology and science: Ars Technica, TechCrunch, The Verge, NASA
 - Social (posts with author and likes/comments/shares), no key needed:
-  - Reddit (r/worldnews, r/news, r/technology) via its public JSON listings
+  - Reddit (r/worldnews, r/news, r/technology). Reddit blocks anonymous API access, so by default these use the
+    public subreddit feeds (headlines only). For scores and comment counts, create an "installed app" at
+    https://www.reddit.com/prefs/apps and add its client ID as the `REDDIT_CLIENT_ID` repository secret.
   - Hacker News front page via the Algolia HN API
   - Mastodon trending posts and trending news links (mastodon.social)
   - Bluesky "Discover" feed via the public AppView API

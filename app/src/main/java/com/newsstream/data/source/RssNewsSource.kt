@@ -16,12 +16,13 @@ class RssNewsSource(
     private val feedUrl: String,
     /** Topic for items that no keyword or category places elsewhere. */
     private val defaultTopic: Topic = Topic.WORLD,
+    private val headers: Map<String, String> = emptyMap(),
 ) : NewsSource {
 
     override fun fetch(): List<Article> {
         val parser = Xml.newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-        parser.setInput(StringReader(httpGet(feedUrl)))
+        parser.setInput(StringReader(httpGet(feedUrl, headers)))
 
         val articles = mutableListOf<Article>()
         var fields: MutableMap<String, String>? = null
@@ -70,12 +71,16 @@ class RssNewsSource(
             body = emptyList(),
             source = name,
             publishedAt = parseFeedDate(date.orEmpty()),
+            author = (this["dc:creator"] ?: this["name"])?.takeIf { it.isNotBlank() },
             topic = TopicClassifier.classify(cleanTitle, summary, this["category"].orEmpty(), defaultTopic),
         )
     }
 
     private companion object {
-        val TEXT_TAGS = setOf("title", "description", "summary", "pubDate", "dc:date", "published", "updated")
+        // "name" is the author's name inside an Atom <author> element.
+        val TEXT_TAGS = setOf(
+            "title", "description", "summary", "pubDate", "dc:date", "published", "updated", "dc:creator", "name",
+        )
         const val MAX_ARTICLES = 30
     }
 }

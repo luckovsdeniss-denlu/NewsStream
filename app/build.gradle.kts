@@ -14,6 +14,11 @@ val buildNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "0").toInt()
 val guardianApiKey = (System.getenv("GUARDIAN_API_KEY") ?: findProperty("GUARDIAN_API_KEY") as String?)
     ?.takeIf { it.isNotBlank() } ?: "test"
 
+// Reddit "installed app" client ID (https://www.reddit.com/prefs/apps). Optional: without it the
+// Reddit sources fall back to public feeds, which lack scores and comment counts.
+val redditClientId = System.getenv("REDDIT_CLIENT_ID")?.takeIf { it.isNotBlank() }
+    ?: findProperty("REDDIT_CLIENT_ID") as String? ?: ""
+
 android {
     namespace = "com.newsstream"
     compileSdk = 34
@@ -24,6 +29,7 @@ android {
         versionCode = maxOf(buildNumber, 1)
         versionName = "$baseVersion.$buildNumber"
         buildConfigField("String", "GUARDIAN_API_KEY", "\"$guardianApiKey\"")
+        buildConfigField("String", "REDDIT_CLIENT_ID", "\"$redditClientId\"")
     }
     buildFeatures {
         compose = true
