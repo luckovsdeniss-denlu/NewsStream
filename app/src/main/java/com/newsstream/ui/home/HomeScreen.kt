@@ -1,20 +1,27 @@
 package com.newsstream.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
 import com.newsstream.data.ContentKind
@@ -42,9 +50,9 @@ import com.newsstream.ui.icon
 import com.newsstream.ui.theme.AppBackground
 
 private enum class Filter(val label: String, val kind: ContentKind?) {
-    ALL("ALL", null),
-    NEWS("NEWS", ContentKind.NEWS),
-    SOCIAL("SOCIAL", ContentKind.SOCIAL),
+    ALL("All", null),
+    NEWS("News", ContentKind.NEWS),
+    SOCIAL("Social", ContentKind.SOCIAL),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,12 +133,13 @@ fun HomeScreen(
             bottomBar = bottomBar,
         ) { pad ->
             Column(Modifier.fillMaxSize().padding(pad)) {
-                FilterRow(filter, onSelect = { filter = it })
-                TopicFilterRow(
-                    counts = topicCounts,
-                    selected = selectedTopics,
-                    onToggle = toggleTopic,
-                    onClear = { topicNames = "" },
+                FilterBar(
+                    kind = filter,
+                    onKindSelected = { filter = it },
+                    topicCounts = topicCounts,
+                    selectedTopics = selectedTopics,
+                    onToggleTopic = toggleTopic,
+                    onClearTopics = { topicNames = "" },
                 )
                 ArticleFeed(
                     articles = visible,
@@ -154,69 +163,101 @@ fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Two dropdown selectors side by side, so filters take one fixed row instead of scrolling:
+ * content type (single choice) and topics (multiple choice, the menu stays open while ticking).
+ */
 @Composable
-private fun FilterRow(selected: Filter, onSelect: (Filter) -> Unit) {
+private fun FilterBar(
+    kind: Filter,
+    onKindSelected: (Filter) -> Unit,
+    topicCounts: Map<Topic, Int>,
+    selectedTopics: Set<Topic>,
+    onToggleTopic: (Topic) -> Unit,
+    onClearTopics: () -> Unit,
+) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Filter.entries.forEach { option ->
-            FilterChip(
-                selected = option == selected,
-                onClick = { onSelect(option) },
-                label = { Text(option.label, style = MaterialTheme.typography.labelLarge) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    labelColor = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
+        Box(Modifier.weight(1f)) {
+            var open by remember { mutableStateOf(false) }
+            SelectorButton("SHOW", kind.label, active = kind != Filter.ALL, onClick = { open = true })
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                Filter.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.label) },
+                        onClick = {
+                            onKindSelected(option)
+                            open = false
+                        },
+                        leadingIcon = { CheckMark(option == kind) },
+                    )
+                }
+            }
+        }
+        Box(Modifier.weight(1f)) {
+            var open by remember { mutableStateOf(false) }
+            val value = when (selectedTopics.size) {
+                0 -> "All"
+                1 -> selectedTopics.first().label
+                else -> "${selectedTopics.first().label} +${selectedTopics.size - 1}"
+            }
+            SelectorButton("TOPICS", value, active = selectedTopics.isNotEmpty(), onClick = { open = true })
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                DropdownMenuItem(
+                    text = { Text("All topics") },
+                    onClick = {
+                        onClearTopics()
+                        open = false
+                    },
+                    leadingIcon = { CheckMark(selectedTopics.isEmpty()) },
+                )
+                HorizontalDivider()
+                Topic.entries.forEach { topic ->
+                    val count = topicCounts[topic] ?: 0
+                    DropdownMenuItem(
+                        text = { Text("${topic.label} ($count)") },
+                        onClick = { onToggleTopic(topic) },
+                        leadingIcon = { Checkbox(checked = topic in selectedTopics, onCheckedChange = null) },
+                        trailingIcon = { Icon(topic.icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        enabled = count > 0 || topic in selectedTopics,
+                    )
+                }
+            }
         }
     }
 }
 
-/** Multi-select topic chips with live counts; topics with no stories are hidden unless selected. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopicFilterRow(
-    counts: Map<Topic, Int>,
-    selected: Set<Topic>,
-    onToggle: (Topic) -> Unit,
-    onClear: () -> Unit,
-) {
-    val topics = Topic.entries
-        .filter { (counts[it] ?: 0) > 0 || it in selected }
-        .sortedByDescending { counts[it] ?: 0 }
-    val chipColors = FilterChipDefaults.filterChipColors(
-        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        labelColor = MaterialTheme.colorScheme.primary,
-        iconColor = MaterialTheme.colorScheme.primary,
-        containerColor = MaterialTheme.colorScheme.surface,
-    )
-    LazyRow(
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+private fun SelectorButton(title: String, value: String, active: Boolean, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        ),
     ) {
-        item {
-            FilterChip(
-                selected = selected.isEmpty(),
-                onClick = onClear,
-                label = { Text("All topics", style = MaterialTheme.typography.labelLarge) },
-                colors = chipColors,
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+            Text(
+                value,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
-        items(topics, key = { it.name }) { topic ->
-            FilterChip(
-                selected = topic in selected,
-                onClick = { onToggle(topic) },
-                label = { Text("${topic.label} ${counts[topic] ?: 0}", style = MaterialTheme.typography.labelLarge) },
-                leadingIcon = { Icon(topic.icon, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                colors = chipColors,
-            )
-        }
+        Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+    }
+}
+
+@Composable
+private fun CheckMark(checked: Boolean) {
+    if (checked) {
+        Icon(Icons.Filled.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
+    } else {
+        Spacer(Modifier.size(24.dp))
     }
 }

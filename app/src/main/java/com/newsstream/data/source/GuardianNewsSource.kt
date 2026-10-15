@@ -17,7 +17,7 @@ class GuardianNewsSource(private val apiKey: String) : NewsSource {
             .appendQueryParameter("order-by", "newest")
             .appendQueryParameter("page-size", "20")
             .appendQueryParameter("type", "article")
-            .appendQueryParameter("show-fields", "trailText,bodyText")
+            .appendQueryParameter("show-fields", "trailText,bodyText,thumbnail")
             .build()
             .toString()
         val results = JSONObject(httpGet(url)).getJSONObject("response").getJSONArray("results")
@@ -35,6 +35,7 @@ class GuardianNewsSource(private val apiKey: String) : NewsSource {
                 publishedAt = parseFeedDate(item.optString("webPublicationDate")),
                 topic = SECTION_TOPICS[item.optString("sectionId")]
                     ?: TopicClassifier.classify(title, summary, item.optString("sectionName"), Topic.WORLD),
+                imageUrl = fields?.optStringOrNull("thumbnail"),
             )
         }
     }

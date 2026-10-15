@@ -32,6 +32,7 @@ class RssNewsSource(
                 XmlPullParser.START_TAG -> when (val tag = parser.name) {
                     "item", "entry" -> fields = mutableMapOf()
                     "link" -> fields?.let { readLink(parser, it) }
+                    "media:content", "media:thumbnail", "enclosure" -> fields?.let { readImage(parser, it) }
                     // RSS: <category>Tech</category>; Atom: <category term="Tech"/>
                     "category" -> fields?.let {
                         val category = parser.getAttributeValue(null, "term") ?: parser.nextText()
@@ -54,9 +55,24 @@ class RssNewsSource(
         val href = parser.getAttributeValue(null, "href")
         if (href == null) {
             fields.putIfAbsent("link", parser.nextText().trim())
-        } else if (parser.getAttributeValue(null, "rel").let { it == null || it == "alternate" }) {
-            fields.putIfAbsent("link", href.trim())
+        } else {
+            when (parser.getAttributeValue(null, "rel")) {
+                null, "alternate" -> fields.putIfAbsent("link", href.trim())
+                "enclosure" -> if (parser.getAttributeValue(null, "type").orEmpty().startsWith("image")) {
+                    fields.putIfAbsent("image", href.trim())
+                }
+            }
         }
+    }
+
+    // <media:content url=… medium="image">, <media:thumbnail url=…>, <enclosure url=… type="image/jpeg">
+    private fun readImage(parser: XmlPullParser, fields: MutableMap<String, String>) {
+        val url = parser.getAttributeValue(null, "url")?.takeIf { it.isNotBlank() } ?: return
+        val type = parser.getAttributeValue(null, "type").orEmpty()
+        val medium = parser.getAttributeValue(null, "medium").orEmpty()
+        val isImage = parser.name == "media:thumbnail" || medium == "image" || type.startsWith("image") ||
+            (type.isEmpty() && medium.isEmpty() && IMAGE_EXTENSION.containsMatchIn(url))
+        if (isImage) fields.putIfAbsent("image", url.trim())
     }
 
     private fun Map<String, String>.toArticle(): Article? {
@@ -64,7 +80,10 @@ class RssNewsSource(
         val link = this["link"]?.takeIf { it.isNotBlank() } ?: return null
         val date = this["pubDate"] ?: this["dc:date"] ?: this["published"] ?: this["updated"]
         val cleanTitle = htmlToText(title)
-        val summary = htmlToText(this["description"] ?: this["summary"].orEmpty())
+        val rawSummary = this["description"] ?: this["summary"].orEmpty()
+        val summary = htmlToText(rawSummary)
+        // Many feeds embed the lead image as an <img> in the description instead.
+        val image = this["image"] ?: INLINE_IMAGE.find(rawSummary)?.groupValues?.get(1)
         return Article(
             url = link,
             title = cleanTitle,
@@ -73,6 +92,7 @@ class RssNewsSource(
             source = name,
             publishedAt = parseFeedDate(date.orEmpty()),
             author = (this["dc:creator"] ?: this["name"])?.takeIf { it.isNotBlank() },
+            imageUrl = image?.replace("&amp;", "&"),
             topic = TopicClassifier.classify(cleanTitle, summary, this["category"].orEmpty(), defaultTopic),
         )
     }
@@ -83,5 +103,7 @@ class RssNewsSource(
             "title", "description", "summary", "pubDate", "dc:date", "published", "updated", "dc:creator", "name",
         )
         const val MAX_ARTICLES = 30
+        val INLINE_IMAGE = Regex("<img[^>]+src=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE)
+        val IMAGE_EXTENSION = Regex("\\.(jpe?g|png|webp|gif)(\\?|$)", RegexOption.IGNORE_CASE)
     }
 }

@@ -56,6 +56,9 @@ class RedditSource(
                 engagement = Engagement(likes = post.optInt("score"), comments = post.optInt("num_comments")),
                 discussionUrl = thread,
                 topic = TopicClassifier.classify(title, summary, post.optString("link_flair_text"), defaultTopic),
+                imageUrl = post.optJSONObject("preview")?.optJSONArray("images")?.optJSONObject(0)
+                    ?.optJSONObject("source")?.optStringOrNull("url")
+                    ?: post.optStringOrNull("thumbnail")?.takeIf { it.startsWith("http") },
             )
         }
     }

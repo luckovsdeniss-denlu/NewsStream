@@ -38,6 +38,7 @@ class LemmySource(private val instance: String = "lemmy.world") : NewsSource {
                 engagement = counts?.let { Engagement(likes = it.optInt("score"), comments = it.optInt("comments")) },
                 discussionUrl = thread,
                 topic = TopicClassifier.classify(title, summary, community?.optString("title").orEmpty()),
+                imageUrl = post.optStringOrNull("thumbnail_url"),
             )
         }
     }

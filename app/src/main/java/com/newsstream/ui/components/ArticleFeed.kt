@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -34,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
@@ -42,6 +44,8 @@ import com.newsstream.data.Topic
 import com.newsstream.ui.EngagementRow
 import com.newsstream.ui.byline
 import com.newsstream.ui.icon
+import com.newsstream.ui.publishedTime
+import com.newsstream.ui.relativeTime
 import com.newsstream.ui.theme.panel
 
 /** Article list with loading, empty and partial-failure states, shared by the feed and topic screens. */
@@ -170,7 +174,9 @@ fun ArticleCard(
                 color = accent,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
             )
+            TimeBadge(article)
         }
         Text(
             article.title,
@@ -210,5 +216,32 @@ fun TopicTag(topic: Topic, selected: Boolean = false, onClick: ((Topic) -> Unit)
     ) {
         Icon(topic.icon, contentDescription = null, tint = content, modifier = Modifier.size(12.dp))
         Text(topic.label.uppercase(), style = MaterialTheme.typography.labelSmall, color = content)
+    }
+}
+
+/** Publish time in its own corner slot: clock time on top, "x min ago" underneath. */
+@Composable
+private fun TimeBadge(article: Article) {
+    val clock = article.publishedTime(LocalContext.current) ?: return
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Icon(
+            Icons.Filled.Schedule,
+            contentDescription = "Published",
+            tint = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.size(13.dp),
+        )
+        Column(horizontalAlignment = Alignment.End) {
+            Text(clock, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+            article.relativeTime()?.let {
+                Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }

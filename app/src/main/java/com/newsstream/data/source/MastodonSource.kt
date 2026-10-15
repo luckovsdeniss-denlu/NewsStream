@@ -34,6 +34,9 @@ class MastodonTrendingPostsSource(private val server: String = "mastodon.social"
                     shares = status.optInt("reblogs_count"),
                 ),
                 topic = TopicClassifier.classify(text),
+                imageUrl = status.optJSONArray("media_attachments")?.optJSONObject(0)
+                    ?.takeIf { it.optString("type") == "image" }?.optStringOrNull("preview_url")
+                    ?: status.optJSONObject("card")?.optStringOrNull("image"),
             )
         }
     }
@@ -64,6 +67,7 @@ class MastodonTrendingLinksSource(private val server: String = "mastodon.social"
                 author = link.optStringOrNull("provider_name"),
                 engagement = Engagement(shares = shares),
                 topic = TopicClassifier.classify(cleanTitle, summary),
+                imageUrl = link.optStringOrNull("image"),
             )
         }
     }

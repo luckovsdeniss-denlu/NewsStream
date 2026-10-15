@@ -42,8 +42,17 @@ class BlueskySource : NewsSource {
                     shares = post.optInt("repostCount"),
                 ),
                 topic = TopicClassifier.classify(text),
+                imageUrl = embedImage(post.optJSONObject("embed")),
             )
         }
+    }
+
+    // Image posts carry thumbnails in embed.images; link cards in embed.external.
+    private fun embedImage(embed: JSONObject?): String? {
+        if (embed == null) return null
+        embed.optJSONArray("images")?.optJSONObject(0)?.optStringOrNull("thumb")?.let { return it }
+        embed.optJSONObject("external")?.optStringOrNull("thumb")?.let { return it }
+        return embedImage(embed.optJSONObject("media"))
     }
 
     private companion object {
