@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -46,6 +47,8 @@ import com.newsstream.ui.icon
 fun ImageGrid(
     articles: List<Article>,
     isLoading: Boolean,
+    notLoadedYet: Boolean,
+    onLoad: () -> Unit,
     onArticleClick: (Article) -> Unit,
     modifier: Modifier = Modifier,
     resetKey: Any? = null,
@@ -67,6 +70,14 @@ fun ImageGrid(
                 }
             }
             isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+            notLoadedYet -> Column(
+                Modifier.align(Alignment.Center).padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text("No news loaded yet.", style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(onClick = onLoad) { Text("Load news") }
+            }
             else -> Text(
                 "No images for the selected topics yet.",
                 style = MaterialTheme.typography.bodyMedium,

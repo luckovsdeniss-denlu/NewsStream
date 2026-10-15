@@ -151,6 +151,8 @@ fun HomeScreen(
                     ImageGrid(
                         articles = visible,
                         isLoading = state.isLoading,
+                        notLoadedYet = state.notLoadedYet,
+                        onLoad = onRefresh,
                         onArticleClick = onArticleClick,
                         resetKey = "$topicNames|${state.hiddenSources.sorted()}",
                     )
@@ -161,13 +163,16 @@ fun HomeScreen(
                         failedSources = state.failedSources,
                         onRefresh = onRefresh,
                         onArticleClick = onArticleClick,
-                        emptyMessage = if (state.allArticles.isNotEmpty() && state.articles.isEmpty()) {
+                        emptyMessage = if (state.notLoadedYet) {
+                            "No news loaded yet."
+                        } else if (state.allArticles.isNotEmpty() && state.articles.isEmpty()) {
                             "No sources selected. Tap the sources button to choose some."
                         } else if (state.articles.isEmpty()) {
                             "Couldn't load any news. Check your connection."
                         } else {
                             "No stories match these filters."
                         },
+                        emptyActionLabel = if (state.notLoadedYet) "Load news" else "Try again",
                         onTopicClick = toggleTopic,
                         selectedTopics = selectedTopics,
                         pageResetKey = "$topicNames|${state.hiddenSources.sorted()}",

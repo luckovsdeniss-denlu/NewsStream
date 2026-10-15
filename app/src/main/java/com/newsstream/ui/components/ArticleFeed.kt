@@ -55,6 +55,7 @@ fun ArticleFeed(
     modifier: Modifier = Modifier,
     showTopic: Boolean = true,
     emptyMessage: String = "Couldn't load any news. Check your connection.",
+    emptyActionLabel: String = "Try again",
     /** When set, tapping a card's topic tag calls this (e.g. to toggle a topic filter). */
     onTopicClick: ((Topic) -> Unit)? = null,
     selectedTopics: Set<Topic> = emptySet(),
@@ -116,7 +117,7 @@ fun ArticleFeed(
                 }
             }
             isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-            else -> EmptyState(emptyMessage, onRefresh, Modifier.align(Alignment.Center))
+            else -> EmptyState(emptyMessage, emptyActionLabel, onRefresh, Modifier.align(Alignment.Center))
         }
         if (isLoading && articles.isNotEmpty()) {
             LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -130,7 +131,7 @@ private const val PAGE_SIZE = 10
 private const val LOAD_MORE_THRESHOLD = 3
 
 @Composable
-private fun EmptyState(message: String, onRefresh: () -> Unit, modifier: Modifier = Modifier) {
+private fun EmptyState(message: String, actionLabel: String, onRefresh: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier.padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -139,7 +140,7 @@ private fun EmptyState(message: String, onRefresh: () -> Unit, modifier: Modifie
         Text(message, style = MaterialTheme.typography.bodyMedium)
         OutlinedButton(onClick = onRefresh) {
             Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text("Try again", Modifier.padding(start = 8.dp), style = MaterialTheme.typography.labelLarge)
+            Text(actionLabel, Modifier.padding(start = 8.dp), style = MaterialTheme.typography.labelLarge)
         }
     }
 }

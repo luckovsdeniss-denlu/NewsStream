@@ -28,6 +28,9 @@ data class NewsUiState(
 ) {
     val isLoading: Boolean get() = loadingSources > 0
 
+    /** Nothing has been fetched yet: the app doesn't load news until the user asks. */
+    val notLoadedYet: Boolean get() = !isLoading && allArticles.isEmpty() && allFailedSources.isEmpty()
+
     /** Articles from the sources the user has selected. */
     val articles: List<Article> by lazy { allArticles.filter { it.source !in hiddenSources } }
     val failedSources: List<String> by lazy { allFailedSources.filter { it !in hiddenSources } }
@@ -48,11 +51,10 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     )
     val state: StateFlow<NewsUiState> = _state.asStateFlow()
 
-    init {
-        refresh()
-    }
-
-    /** Re-fetches every selected source. Switched-off sources are not downloaded. */
+    /**
+     * Fetches every selected source. Nothing is fetched at launch; this runs when the user taps
+     * Load news or refresh. Switched-off sources are not downloaded.
+     */
     fun refresh() = load(visibleSourceNames())
 
     fun setSourceVisible(name: String, visible: Boolean) {
