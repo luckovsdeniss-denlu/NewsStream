@@ -36,7 +36,6 @@ class MainActivity : ComponentActivity() {
                             setVisible = newsViewModel::setSourceVisible,
                             showAll = newsViewModel::showAllSources,
                             hideAll = newsViewModel::hideAllSources,
-                            showOnly = newsViewModel::showOnlySource,
                         ),
                     )
                 }

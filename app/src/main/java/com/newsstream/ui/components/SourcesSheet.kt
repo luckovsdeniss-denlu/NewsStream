@@ -22,9 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.newsstream.data.ContentKind
 import com.newsstream.data.SourceInfo
-import com.newsstream.data.Topic
 import com.newsstream.ui.NewsUiState
 
 /** Callbacks for changing which sources are shown. */
@@ -32,13 +30,11 @@ class SourceActions(
     val setVisible: (name: String, visible: Boolean) -> Unit,
     val showAll: () -> Unit,
     val hideAll: () -> Unit,
-    val showOnly: (name: String) -> Unit,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Unit) {
-    val counts = remember(state.allArticles) { state.allArticles.groupingBy { it.source }.eachCount() }
     val selectedCount = state.sources.count { it.name !in state.hiddenSources }
 
     ModalBottomSheet(
@@ -63,54 +59,36 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
                 TextButton(onClick = actions.showAll) { Text("Select all") }
                 TextButton(onClick = actions.hideAll) { Text("None") }
             }
+            // One flat, alphabetical list of source names.
+            val sorted = remember(state.sources) { state.sources.sortedBy { it.name.lowercase() } }
             LazyColumn(Modifier.fillMaxWidth()) {
-                // News grouped by the topic each source covers, then social platforms.
-                val groups = Topic.entries.map { topic ->
-                    "NEWS · ${topic.label.uppercase()}" to
-                        state.sources.filter { it.kind == ContentKind.NEWS && it.category == topic }
-                } + ("SOCIAL" to state.sources.filter { it.kind == ContentKind.SOCIAL })
-                for ((header, group) in groups) {
-                    if (group.isEmpty()) continue
-                    item(key = "header-$header") {
-                        Text(
-                            header,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 4.dp),
-                        )
-                    }
-                    items(group, key = { it.name }) { source ->
-                        SourceRow(
-                            source = source,
-                            selected = source.name !in state.hiddenSources,
-                            count = counts[source.name] ?: 0,
-                            failed = source.name in state.allFailedSources,
-                            onToggle = { actions.setVisible(source.name, it) },
-                            onOnly = { actions.showOnly(source.name) },
-                        )
-                    }
+                items(sorted, key = { it.name }) { source ->
+                    SourceRow(
+                        source = source,
+                        selected = source.name !in state.hiddenSources,
+                        failed = source.name in state.allFailedSources,
+                        onToggle = { actions.setVisible(source.name, it) },
+                    )
                 }
             }
         }
     }
 }
 
+/** Checkbox and name only; a source that failed to load shows its name in the error colour. */
 @Composable
 private fun SourceRow(
     source: SourceInfo,
     selected: Boolean,
-    count: Int,
     failed: Boolean,
     onToggle: (Boolean) -> Unit,
-    onOnly: () -> Unit,
 ) {
     Row(
         Modifier
             .fillMaxWidth()
             .clickable { onToggle(!selected) }
-            .padding(start = 8.dp, end = 12.dp),
+            .padding(start = 8.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Checkbox(
             checked = selected,
@@ -121,18 +99,14 @@ private fun SourceRow(
                 checkmarkColor = MaterialTheme.colorScheme.onPrimary,
             ),
         )
-        Column(Modifier.weight(1f)) {
-            Text(
-                source.name,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                if (failed) "Couldn't load" else "$count stories",
-                style = MaterialTheme.typography.labelSmall,
-                color = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        TextButton(onClick = onOnly) { Text("Only") }
+        Text(
+            source.name,
+            style = MaterialTheme.typography.bodyLarge,
+            color = when {
+                failed -> MaterialTheme.colorScheme.error
+                selected -> MaterialTheme.colorScheme.onSurface
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
     }
 }

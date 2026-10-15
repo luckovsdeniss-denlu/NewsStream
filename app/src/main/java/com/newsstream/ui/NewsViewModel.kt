@@ -67,11 +67,6 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
 
     fun hideAllSources() = setHidden(_state.value.sources.map { it.name }.toSet())
 
-    fun showOnlySource(name: String) {
-        setHidden(_state.value.sources.map { it.name }.toSet() - name)
-        loadIfMissing(listOf(name))
-    }
-
     private fun visibleSourceNames() =
         _state.value.sources.map { it.name }.filter { it !in _state.value.hiddenSources }
 
