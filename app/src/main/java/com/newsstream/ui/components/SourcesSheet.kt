@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.ContentKind
 import com.newsstream.data.SourceInfo
+import com.newsstream.data.Topic
 import com.newsstream.ui.NewsUiState
 
 /** Callbacks for changing which sources are shown. */
@@ -63,12 +64,16 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
                 TextButton(onClick = actions.hideAll) { Text("None") }
             }
             LazyColumn(Modifier.fillMaxWidth()) {
-                for (kind in ContentKind.entries) {
-                    val group = state.sources.filter { it.kind == kind }
+                // News grouped by the topic each source covers, then social platforms.
+                val groups = Topic.entries.map { topic ->
+                    "NEWS · ${topic.label.uppercase()}" to
+                        state.sources.filter { it.kind == ContentKind.NEWS && it.category == topic }
+                } + ("SOCIAL" to state.sources.filter { it.kind == ContentKind.SOCIAL })
+                for ((header, group) in groups) {
                     if (group.isEmpty()) continue
-                    item(key = "header-$kind") {
+                    item(key = "header-$header") {
                         Text(
-                            if (kind == ContentKind.NEWS) "NEWS" else "SOCIAL",
+                            header,
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 4.dp),

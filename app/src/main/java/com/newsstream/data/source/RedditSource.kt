@@ -25,6 +25,7 @@ class RedditSource(
 ) : NewsSource {
     override val name = "Reddit r/$subreddit"
     override val kind = ContentKind.SOCIAL
+    override val category = defaultTopic
 
     override fun fetch(): List<Article> = if (clientId.isNotBlank()) fetchFromApi() else fetchFromFeed()
 

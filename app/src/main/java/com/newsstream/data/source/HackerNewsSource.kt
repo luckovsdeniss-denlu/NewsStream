@@ -11,6 +11,7 @@ import org.json.JSONObject
 class HackerNewsSource : NewsSource {
     override val name = "Hacker News"
     override val kind = ContentKind.SOCIAL
+    override val category = Topic.TECH
 
     override fun fetch(): List<Article> {
         val hits = JSONObject(httpGet("https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=30"))

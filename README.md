@@ -13,14 +13,24 @@ Configured in `data/NewsRepository.kt`:
   rate-limited. For a real key, register at https://open-platform.theguardian.com/access/ and add it as the
   `GUARDIAN_API_KEY` repository secret (CI) or Gradle property (local builds).
 - RSS/Atom feeds (headline + summary, link to the full story), no key needed:
-  - World: BBC News, NPR, Al Jazeera, The New York Times, Sky News, Deutsche Welle, France 24, CBS News
-  - Business: CNBC
-  - Technology and science: Ars Technica, TechCrunch, The Verge, NASA
+  - World: BBC News, NPR, Al Jazeera, The New York Times, Sky News, Deutsche Welle, France 24, CBS News,
+    The Independent, Euronews, UN News, South China Morning Post, Times of India, The Japan Times,
+    ABC News (Australia), Google News
+  - Politics: Politico, The Hill
+  - Business: CNBC, The Economist, Fortune
+  - Technology: Ars Technica, TechCrunch, The Verge, Wired, MIT Technology Review, Engadget
+  - Science: NASA, ScienceDaily, New Scientist, Space.com, Phys.org
+  - Climate: Carbon Brief, Inside Climate News
+  - Health: WHO, STAT News
+  - Sports: ESPN, BBC Sport, Sky Sports
+  - Culture: Variety, Rolling Stone
 - Social (posts with author and likes/comments/shares), no key needed:
   - Reddit (r/worldnews, r/news, r/technology). Reddit blocks anonymous API access, so by default these use the
     public subreddit feeds (headlines only). For scores and comment counts, create an "installed app" at
     https://www.reddit.com/prefs/apps and add its client ID as the `REDDIT_CLIENT_ID` repository secret.
   - Hacker News front page via the Algolia HN API
+  - Lobsters (lobste.rs) hottest stories
+  - Lemmy (lemmy.world) hot posts via its public API
   - Mastodon trending posts and trending news links (mastodon.social)
   - Bluesky "Discover" feed via the public AppView API
 

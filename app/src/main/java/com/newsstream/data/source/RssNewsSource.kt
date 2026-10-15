@@ -18,6 +18,7 @@ class RssNewsSource(
     private val defaultTopic: Topic = Topic.WORLD,
     private val headers: Map<String, String> = emptyMap(),
 ) : NewsSource {
+    override val category = defaultTopic
 
     override fun fetch(): List<Article> {
         val parser = Xml.newPullParser()

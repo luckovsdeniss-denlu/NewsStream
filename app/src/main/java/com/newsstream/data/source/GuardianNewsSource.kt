@@ -9,6 +9,7 @@ import org.json.JSONObject
 /** The Guardian Open Platform content API: https://open-platform.theguardian.com */
 class GuardianNewsSource(private val apiKey: String) : NewsSource {
     override val name = "The Guardian"
+    override val category = Topic.WORLD
 
     override fun fetch(): List<Article> {
         val url = Uri.parse("https://content.guardianapis.com/search").buildUpon()
