@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Tune
@@ -58,6 +59,7 @@ import com.newsstream.ui.theme.AppBackground
 private enum class Mode(val label: String) {
     NEWS("News"),
     IMAGES("Images"),
+    SAVED("Saved"),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,6 +69,7 @@ fun HomeScreen(
     onRefresh: () -> Unit,
     onArticleClick: (Article) -> Unit,
     sourceActions: SourceActions,
+    onToggleSave: (Article) -> Unit,
 ) {
     var mode by rememberSaveable { mutableStateOf(Mode.NEWS) }
     var showSources by rememberSaveable { mutableStateOf(false) }
@@ -141,7 +144,27 @@ fun HomeScreen(
                     onToggleTopic = toggleTopic,
                     onClearTopics = { topicNames = "" },
                 )
-                if (mode == Mode.IMAGES) {
+                if (mode == Mode.SAVED) {
+                    val saved = if (selectedTopics.isEmpty()) state.saved else state.saved.filter { it.topic in selectedTopics }
+                    ArticleFeed(
+                        articles = saved,
+                        isLoading = false,
+                        failedSources = emptyList(),
+                        onRefresh = onRefresh,
+                        onArticleClick = onArticleClick,
+                        emptyMessage = if (state.saved.isEmpty()) {
+                            "No saved stories yet. Tap the bookmark on any story to save it."
+                        } else {
+                            "No saved stories in these topics."
+                        },
+                        emptyActionLabel = null,
+                        onTopicClick = toggleTopic,
+                        selectedTopics = selectedTopics,
+                        pageResetKey = "saved|$topicNames",
+                        savedIds = state.savedIds,
+                        onToggleSave = onToggleSave,
+                    )
+                } else if (mode == Mode.IMAGES) {
                     ImageGrid(
                         articles = visible,
                         isLoading = state.isLoading,
@@ -170,6 +193,8 @@ fun HomeScreen(
                         onTopicClick = toggleTopic,
                         selectedTopics = selectedTopics,
                         pageResetKey = "$topicNames|${state.hiddenSources.sorted()}",
+                        savedIds = state.savedIds,
+                        onToggleSave = onToggleSave,
                     )
                 }
             }
@@ -295,7 +320,11 @@ private fun ModeSwitch(selected: Mode, onSelect: (Mode) -> Unit, modifier: Modif
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(
-                        if (option == Mode.NEWS) Icons.Filled.Newspaper else Icons.Filled.PhotoLibrary,
+                        when (option) {
+                            Mode.NEWS -> Icons.Filled.Newspaper
+                            Mode.IMAGES -> Icons.Filled.PhotoLibrary
+                            Mode.SAVED -> Icons.Filled.Bookmark
+                        },
                         contentDescription = null,
                         tint = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp),

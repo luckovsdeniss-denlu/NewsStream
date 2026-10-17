@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -56,12 +58,15 @@ fun ArticleFeed(
     modifier: Modifier = Modifier,
     showTopic: Boolean = true,
     emptyMessage: String = "Couldn't load any news. Check your connection.",
-    emptyActionLabel: String = "Try again",
+    /** Label of the empty-state button, or null for no button. */
+    emptyActionLabel: String? = "Try again",
     /** When set, tapping a card's topic tag calls this (e.g. to toggle a topic filter). */
     onTopicClick: ((Topic) -> Unit)? = null,
     selectedTopics: Set<Topic> = emptySet(),
     /** Changing this (e.g. when filters change) goes back to the first page. */
     pageResetKey: Any? = null,
+    savedIds: Set<String> = emptySet(),
+    onToggleSave: ((Article) -> Unit)? = null,
 ) {
     // Show articles a page at a time; the next page is added when the user nears the end.
     var shownCount by rememberSaveable(pageResetKey) { mutableIntStateOf(PAGE_SIZE) }
@@ -101,6 +106,8 @@ fun ArticleFeed(
                         onClick = { onArticleClick(article) },
                         onTopicClick = onTopicClick,
                         topicSelected = article.topic in selectedTopics,
+                        saved = article.id in savedIds,
+                        onToggleSave = onToggleSave?.let { toggle -> { toggle(article) } },
                     )
                 }
                 item(key = "footer") {
@@ -132,16 +139,18 @@ private const val PAGE_SIZE = 10
 private const val LOAD_MORE_THRESHOLD = 3
 
 @Composable
-private fun EmptyState(message: String, actionLabel: String, onRefresh: () -> Unit, modifier: Modifier = Modifier) {
+private fun EmptyState(message: String, actionLabel: String?, onRefresh: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier.padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(message, style = MaterialTheme.typography.bodyMedium)
-        OutlinedButton(onClick = onRefresh) {
-            Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(actionLabel, Modifier.padding(start = 8.dp), style = MaterialTheme.typography.labelLarge)
+        if (actionLabel != null) {
+            OutlinedButton(onClick = onRefresh) {
+                Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(actionLabel, Modifier.padding(start = 8.dp), style = MaterialTheme.typography.labelLarge)
+            }
         }
     }
 }
@@ -153,6 +162,8 @@ fun ArticleCard(
     onClick: () -> Unit,
     onTopicClick: ((Topic) -> Unit)? = null,
     topicSelected: Boolean = false,
+    saved: Boolean = false,
+    onToggleSave: (() -> Unit)? = null,
 ) {
     val social = article.kind == ContentKind.SOCIAL
     val accent = if (social) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
@@ -177,6 +188,7 @@ fun ArticleCard(
             article.timeAgo()?.let {
                 Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            if (onToggleSave != null) SaveButton(saved, onToggleSave)
         }
         Text(
             article.title,
@@ -219,3 +231,17 @@ fun TopicTag(topic: Topic, selected: Boolean = false, onClick: ((Topic) -> Unit)
     }
 }
 
+/** Bookmark toggle: filled when the story is saved. */
+@Composable
+fun SaveButton(saved: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+    Icon(
+        if (saved) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+        contentDescription = if (saved) "Remove from saved" else "Save",
+        tint = MaterialTheme.colorScheme.secondary,
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(onClick = onToggle)
+            .padding(2.dp)
+            .size(22.dp),
+    )
+}

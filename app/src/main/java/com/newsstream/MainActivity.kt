@@ -23,10 +23,17 @@ class MainActivity : ComponentActivity() {
                 val newsViewModel: NewsViewModel = viewModel()
                 val state by newsViewModel.state.collectAsStateWithLifecycle()
                 var openArticleId by rememberSaveable { mutableStateOf<String?>(null) }
+                // Saved stories open even when they are no longer in the live feed.
                 val openArticle = state.articles.firstOrNull { it.id == openArticleId }
+                    ?: state.saved.firstOrNull { it.id == openArticleId }
 
                 if (openArticle != null) {
-                    ArticleScreen(openArticle, onBack = { openArticleId = null })
+                    ArticleScreen(
+                        article = openArticle,
+                        saved = openArticle.id in state.savedIds,
+                        onToggleSave = { newsViewModel.toggleSaved(openArticle) },
+                        onBack = { openArticleId = null },
+                    )
                 } else {
                     HomeScreen(
                         state = state,
@@ -38,6 +45,7 @@ class MainActivity : ComponentActivity() {
                             hideAll = newsViewModel::hideAllSources,
                             showLanguage = newsViewModel::showLanguage,
                         ),
+                        onToggleSave = newsViewModel::toggleSaved,
                     )
                 }
             }

@@ -6,9 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.newsstream.data.Article
 import com.newsstream.data.NewsRepository
 import com.newsstream.data.SourceInfo
+import com.newsstream.data.SavedArticles
 import com.newsstream.data.SourcePreferences
 import com.newsstream.ui.images.thumbnailRequest
 import coil.imageLoader
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +27,11 @@ data class NewsUiState(
     val allFailedSources: List<String> = emptyList(),
     val sources: List<SourceInfo> = emptyList(),
     val hiddenSources: Set<String> = emptySet(),
+    /** Stories the user saved, newest-saved first. */
+    val saved: List<Article> = emptyList(),
 ) {
+    val savedIds: Set<String> by lazy { saved.map { it.id }.toSet() }
+
     val isLoading: Boolean get() = loadingSources > 0
 
     /** Nothing has been fetched yet: the app doesn't load news until the user asks. */
@@ -39,6 +45,7 @@ data class NewsUiState(
 class NewsViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = NewsRepository(application.cacheDir)
     private val preferences = SourcePreferences(application)
+    private val savedStore = SavedArticles(application)
 
     // Only touched on the main thread (viewModelScope collects there).
     private val articlesBySource = mutableMapOf<String, List<Article>>()
@@ -47,7 +54,11 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     private var roundTotal = 0
 
     private val _state = MutableStateFlow(
-        NewsUiState(sources = repository.sourceInfo, hiddenSources = preferences.hiddenSources),
+        NewsUiState(
+            sources = repository.sourceInfo,
+            hiddenSources = preferences.hiddenSources,
+            saved = savedStore.load(),
+        ),
     )
     val state: StateFlow<NewsUiState> = _state.asStateFlow()
 
@@ -56,6 +67,19 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
      * Load news or refresh. Switched-off sources are not downloaded.
      */
     fun refresh() = load(visibleSourceNames())
+
+    /** Saves the story, or removes it if it is already saved. */
+    fun toggleSaved(article: Article) {
+        val current = _state.value.saved
+        val updated = if (current.any { it.id == article.id }) {
+            current.filterNot { it.id == article.id }
+        } else {
+            listOf(article) + current
+        }
+        _state.update { it.copy(saved = updated) }
+        // Always write the latest list, so quick successive taps can't leave an older one on disk.
+        viewModelScope.launch(Dispatchers.IO) { runCatching { savedStore.store(_state.value.saved) } }
+    }
 
     fun setSourceVisible(name: String, visible: Boolean) {
         setHidden(if (visible) _state.value.hiddenSources - name else _state.value.hiddenSources + name)

@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.HideImage
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.CircularProgressIndicator
@@ -56,7 +58,7 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ArticleScreen(article: Article, onBack: () -> Unit) {
+fun ArticleScreen(article: Article, saved: Boolean, onToggleSave: () -> Unit, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
     val uriHandler = LocalUriHandler.current
     val social = article.kind == ContentKind.SOCIAL
@@ -71,6 +73,15 @@ fun ArticleScreen(article: Article, onBack: () -> Unit) {
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = accent)
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onToggleSave) {
+                            Icon(
+                                if (saved) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                                contentDescription = if (saved) "Remove from saved" else "Save",
+                                tint = accent,
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
