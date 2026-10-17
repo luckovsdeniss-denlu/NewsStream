@@ -35,6 +35,10 @@ Configured in `data/NewsRepository.kt`:
 - **GNews.io** (optional, needs a free key): top headlines in 8 categories, with images. Add the key as the
   `GNEWS_API_KEY` repository secret. The free plan allows ~100 requests/day, so each category is a separate
   source (switch off the ones you don't need) and responses are cached on the device for 30 minutes.
+- In-depth (RSS, no key): ProPublica, Bellingcat, The Conversation, Our World in Data, Visual Capitalist,
+  Quanta Magazine, IEEE Spectrum, NASA Earth Observatory, Aeon, Smithsonian Magazine, Atlas Obscura, the
+  fact-checkers PolitiFact, Snopes and Full Fact, N+1 (Russian science), and Wikipedia's daily "In the news" items
+  and featured article (REST API, no key).
 - Russian-language news (RSS, no key): BBC Русская служба, DW на русском, Euronews на русском, Meduza,
   Новая газета Европа, The Insider, РБК, Коммерсантъ, Ведомости, Интерфакс, ТАСС, РИА Новости, Лента.ру,
   Фонтанка, Хабр, Google Новости; plus GNews Russian headlines when a GNews key is set. The sources sheet has an

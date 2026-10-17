@@ -14,6 +14,7 @@ import com.newsstream.data.source.NewsSource
 import com.newsstream.data.source.RedditSource
 import com.newsstream.data.source.ResponseCache
 import com.newsstream.data.source.RssNewsSource
+import com.newsstream.data.source.WikipediaSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -97,6 +98,27 @@ class NewsRepository(cacheDir: File) {
         RssNewsSource("Фонтанка", "https://www.fontanka.ru/fontanka.rss", language = "ru"),
         RssNewsSource("Хабр", "https://habr.com/ru/rss/articles/?fl=ru", Topic.TECH, language = "ru"),
         GoogleNewsSource("Google Новости", "hl=ru&gl=RU&ceid=RU:ru", language = "ru"),
+        // In-depth: investigations, explainers, data, science and fact-checks
+        RssNewsSource("ProPublica", "https://www.propublica.org/feeds/propublica/main", Topic.POLITICS),
+        RssNewsSource("Bellingcat", "https://www.bellingcat.com/feed/"),
+        RssNewsSource("The Conversation", "https://theconversation.com/global/articles.atom", Topic.GENERAL),
+        RssNewsSource("Our World in Data", "https://ourworldindata.org/atom.xml", Topic.GENERAL),
+        RssNewsSource("Visual Capitalist", "https://www.visualcapitalist.com/feed/", Topic.BUSINESS),
+        RssNewsSource("Quanta Magazine", "https://www.quantamagazine.org/feed/", Topic.SCIENCE),
+        RssNewsSource("IEEE Spectrum", "https://spectrum.ieee.org/feeds/feed.rss", Topic.TECH),
+        RssNewsSource(
+            "NASA Earth Observatory",
+            "https://earthobservatory.nasa.gov/feeds/earth-observatory.rss",
+            Topic.CLIMATE,
+        ),
+        RssNewsSource("Aeon", "https://aeon.co/feed.rss", Topic.CULTURE),
+        RssNewsSource("Smithsonian Magazine", "https://www.smithsonianmag.com/rss/latest_articles/", Topic.SCIENCE),
+        RssNewsSource("Atlas Obscura", "https://www.atlasobscura.com/feeds/latest", Topic.CULTURE),
+        RssNewsSource("PolitiFact", "https://www.politifact.com/rss/all/", Topic.POLITICS),
+        RssNewsSource("Snopes", "https://www.snopes.com/feed/", Topic.GENERAL),
+        RssNewsSource("Full Fact", "https://fullfact.org/feed/", Topic.POLITICS),
+        WikipediaSource(),
+        RssNewsSource("N+1", "https://nplus1.ru/rss", Topic.SCIENCE, language = "ru"),
         // Social
         RedditSource("worldnews", Topic.WORLD),
         RedditSource("news"),
