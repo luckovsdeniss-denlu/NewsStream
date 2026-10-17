@@ -42,6 +42,7 @@ import com.newsstream.data.Topic
 import com.newsstream.ui.EngagementRow
 import com.newsstream.ui.byline
 import com.newsstream.ui.icon
+import com.newsstream.ui.timeAgo
 import com.newsstream.ui.theme.panel
 
 /** Article list with loading, empty and partial-failure states, shared by the feed and topic screens. */
@@ -173,6 +174,9 @@ fun ArticleCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
+            article.timeAgo()?.let {
+                Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         Text(
             article.title,

@@ -48,6 +48,7 @@ import com.newsstream.data.ContentKind
 import com.newsstream.data.source.PageImageFinder
 import com.newsstream.ui.EngagementRow
 import com.newsstream.ui.byline
+import com.newsstream.ui.timeAgo
 import com.newsstream.ui.theme.AppBackground
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -88,7 +89,11 @@ fun ArticleScreen(article: Article, onBack: () -> Unit) {
                         MaterialTheme.typography.headlineSmall
                     },
                 )
-                Text(article.byline().uppercase(), style = MaterialTheme.typography.labelMedium, color = accent)
+                Text(
+                    listOfNotNull(article.byline().uppercase(), article.timeAgo()).joinToString(" · "),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = accent,
+                )
                 article.engagement?.let { EngagementRow(it) }
                 ArticleImage(article)
                 Box(Modifier.fillMaxWidth().height(1.dp).background(accent.copy(alpha = 0.5f)))

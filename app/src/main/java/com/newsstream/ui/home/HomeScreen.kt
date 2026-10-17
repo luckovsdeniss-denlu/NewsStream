@@ -1,5 +1,14 @@
 package com.newsstream.ui.home
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,8 +17,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,18 +25,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Newspaper
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,7 +45,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
 import com.newsstream.data.Topic
@@ -55,7 +52,6 @@ import com.newsstream.ui.NewsUiState
 import com.newsstream.ui.components.ArticleFeed
 import com.newsstream.ui.components.SourceActions
 import com.newsstream.ui.components.SourcesSheet
-import com.newsstream.ui.icon
 import com.newsstream.ui.images.ImageGrid
 import com.newsstream.ui.theme.AppBackground
 
@@ -130,9 +126,7 @@ fun HomeScreen(
                                 },
                             )
                         }
-                        IconButton(onClick = onRefresh, enabled = !state.isLoading) {
-                            Icon(Icons.Filled.Refresh, contentDescription = "Refresh", tint = MaterialTheme.colorScheme.primary)
-                        }
+                        UpdateButton(isLoading = state.isLoading, onClick = onRefresh)
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 )
@@ -184,9 +178,11 @@ fun HomeScreen(
 }
 
 /**
- * One fixed row: a News / Images switch and the topics selector (multiple choice; the menu
- * stays open while ticking). Topics apply to both views.
+ * The News / Images switch, then every topic as a flat, borderless label wrapping over as
+ * many lines as needed (no menus, no sideways scrolling). Tapping labels selects several
+ * topics; "All" clears the selection. Topics apply to both views.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FilterBar(
     mode: Mode,
@@ -196,41 +192,82 @@ private fun FilterBar(
     onToggleTopic: (Topic) -> Unit,
     onClearTopics: () -> Unit,
 ) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        ModeSwitch(mode, onModeSelected, Modifier.weight(1f))
-        Box(Modifier.weight(1f)) {
-            var open by remember { mutableStateOf(false) }
-            val value = when (selectedTopics.size) {
-                0 -> "All"
-                1 -> selectedTopics.first().label
-                else -> "${selectedTopics.first().label} +${selectedTopics.size - 1}"
-            }
-            SelectorButton("TOPICS", value, active = selectedTopics.isNotEmpty(), onClick = { open = true })
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                DropdownMenuItem(
-                    text = { Text("All topics") },
-                    onClick = {
-                        onClearTopics()
-                        open = false
-                    },
-                    leadingIcon = { CheckMark(selectedTopics.isEmpty()) },
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        ModeSwitch(mode, onModeSelected, Modifier.fillMaxWidth())
+        FlowRow(
+            Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            FlatTopic("All", count = null, selected = selectedTopics.isEmpty(), enabled = true, onClick = onClearTopics)
+            Topic.entries.forEach { topic ->
+                val count = topicCounts[topic] ?: 0
+                FlatTopic(
+                    label = topic.label,
+                    count = count.takeIf { it > 0 },
+                    selected = topic in selectedTopics,
+                    enabled = count > 0 || topic in selectedTopics || topicCounts.isEmpty(),
+                    onClick = { onToggleTopic(topic) },
                 )
-                HorizontalDivider()
-                Topic.entries.forEach { topic ->
-                    val count = topicCounts[topic] ?: 0
-                    DropdownMenuItem(
-                        text = { Text("${topic.label} ($count)") },
-                        onClick = { onToggleTopic(topic) },
-                        leadingIcon = { Checkbox(checked = topic in selectedTopics, onCheckedChange = null) },
-                        trailingIcon = { Icon(topic.icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                        enabled = count > 0 || topic in selectedTopics,
-                    )
-                }
             }
         }
+    }
+}
+
+/** A borderless text label; selected ones get a soft filled background. */
+@Composable
+private fun FlatTopic(label: String, count: Int?, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    val color = when {
+        selected -> MaterialTheme.colorScheme.onPrimaryContainer
+        enabled -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outline
+    }
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = color)
+        if (count != null) {
+            Text("$count", style = MaterialTheme.typography.labelSmall, color = color.copy(alpha = 0.7f))
+        }
+    }
+}
+
+/** Refresh as a labelled pill whose sync arrows spin while sources are loading. */
+@Composable
+private fun UpdateButton(isLoading: Boolean, onClick: () -> Unit) {
+    val rotation by rememberInfiniteTransition(label = "update").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(durationMillis = 900, easing = LinearEasing)),
+        label = "spin",
+    )
+    Row(
+        Modifier
+            .padding(end = 8.dp)
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .clickable(enabled = !isLoading, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(
+            Icons.Filled.Sync,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(18.dp).rotate(if (isLoading) -rotation else 0f),
+        )
+        Text(
+            if (isLoading) "Updating" else "Update",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
     }
 }
 
@@ -271,38 +308,5 @@ private fun ModeSwitch(selected: Mode, onSelect: (Mode) -> Unit, modifier: Modif
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun SelectorButton(title: String, value: String, active: Boolean, onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-        ),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-            Text(
-                value,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-    }
-}
-
-@Composable
-private fun CheckMark(checked: Boolean) {
-    if (checked) {
-        Icon(Icons.Filled.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
-    } else {
-        Spacer(Modifier.size(24.dp))
     }
 }

@@ -1,10 +1,22 @@
 package com.newsstream.ui
 
+import android.text.format.DateUtils
 import com.newsstream.data.Article
 import java.util.Locale
 
 /** Source and author. */
 fun Article.byline(): String = listOfNotNull(source, author).joinToString(" · ")
+
+/** How long ago the story was published ("5 min. ago", "3 hours ago"), or null if unknown. */
+fun Article.timeAgo(): String? =
+    publishedAt.takeIf { it != 0L }?.let {
+        DateUtils.getRelativeTimeSpanString(
+            it,
+            System.currentTimeMillis(),
+            DateUtils.MINUTE_IN_MILLIS,
+            DateUtils.FORMAT_ABBREV_RELATIVE,
+        ).toString()
+    }
 
 /** 1234 -> "1.2K", 2500000 -> "2.5M". */
 fun compactCount(n: Int): String = when {
