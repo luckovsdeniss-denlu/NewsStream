@@ -5,8 +5,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.background
@@ -24,10 +22,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Newspaper
-import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.RssFeed
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +53,7 @@ import com.newsstream.ui.NewsUiState
 import com.newsstream.ui.components.ArticleFeed
 import com.newsstream.ui.components.SourceActions
 import com.newsstream.ui.components.SourcesSheet
+import com.newsstream.ui.icon
 import com.newsstream.ui.images.ImageGrid
 import com.newsstream.ui.theme.AppBackground
 
@@ -77,14 +78,14 @@ fun HomeScreen(
         SourcesSheet(state, sourceActions, onDismiss = { showSources = false })
     }
     val sourcesFiltered = state.hiddenSources.isNotEmpty()
-    // Selected topics, saved as comma-separated enum names so they survive rotation.
+    // The selected topic (one at a time, empty for all), saved by name so it survives rotation.
     var topicNames by rememberSaveable { mutableStateOf("") }
     val selectedTopics = remember(topicNames) {
         topicNames.split(',').mapNotNull { name -> Topic.entries.firstOrNull { it.name == name } }.toSet()
     }
+    // Selecting a topic replaces the previous one; selecting it again goes back to all topics.
     val toggleTopic: (Topic) -> Unit = { topic ->
-        val updated = if (topic in selectedTopics) selectedTopics - topic else selectedTopics + topic
-        topicNames = updated.joinToString(",") { it.name }
+        topicNames = if (topic in selectedTopics) "" else topic.name
     }
 
     val topicCounts = remember(state.articles) { state.articles.groupingBy { it.topic }.eachCount() }
@@ -119,7 +120,7 @@ fun HomeScreen(
                     actions = {
                         IconButton(onClick = { showSources = true }) {
                             Icon(
-                                Icons.Filled.Tune,
+                                Icons.Filled.RssFeed,
                                 contentDescription = "Choose sources",
                                 // Highlighted while some sources are switched off.
                                 tint = if (sourcesFiltered) {
@@ -202,12 +203,7 @@ fun HomeScreen(
     }
 }
 
-/**
- * The News / Images switch, then every topic as a flat, borderless label wrapping over as
- * many lines as needed (no menus, no sideways scrolling). Tapping labels selects several
- * topics; "All" clears the selection. Topics apply to both views.
- */
-@OptIn(ExperimentalLayoutApi::class)
+/** One compact row: the News / Images / Saved switch and a single-choice topic button. */
 @Composable
 private fun FilterBar(
     mode: Mode,
@@ -217,48 +213,75 @@ private fun FilterBar(
     onToggleTopic: (Topic) -> Unit,
     onClearTopics: () -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-        ModeSwitch(mode, onModeSelected, Modifier.fillMaxWidth())
-        FlowRow(
-            Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            FlatTopic("All", count = null, selected = selectedTopics.isEmpty(), enabled = true, onClick = onClearTopics)
-            Topic.entries.forEach { topic ->
-                val count = topicCounts[topic] ?: 0
-                FlatTopic(
-                    label = topic.label,
-                    count = count.takeIf { it > 0 },
-                    selected = topic in selectedTopics,
-                    enabled = count > 0 || topic in selectedTopics || topicCounts.isEmpty(),
-                    onClick = { onToggleTopic(topic) },
-                )
-            }
-        }
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ModeSwitch(mode, onModeSelected, Modifier.weight(1f))
+        TopicButton(selectedTopics.firstOrNull(), topicCounts, onToggleTopic, onClearTopics)
     }
 }
 
-/** A borderless text label; selected ones get a soft filled background. */
+/** Compact button showing the current topic; its menu picks exactly one topic, or all. */
 @Composable
-private fun FlatTopic(label: String, count: Int?, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    val color = when {
-        selected -> MaterialTheme.colorScheme.onPrimaryContainer
-        enabled -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.outline
-    }
-    Row(
-        Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(label, style = MaterialTheme.typography.labelLarge, color = color)
-        if (count != null) {
-            Text("$count", style = MaterialTheme.typography.labelSmall, color = color.copy(alpha = 0.7f))
+private fun TopicButton(
+    selected: Topic?,
+    topicCounts: Map<Topic, Int>,
+    onSelect: (Topic) -> Unit,
+    onClear: () -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            Modifier
+                .height(48.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(
+                    if (selected != null) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                )
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp))
+                .clickable { open = true }
+                .padding(start = 12.dp, end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(
+                selected?.icon ?: Icons.Filled.Category,
+                contentDescription = "Topic",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                selected?.label ?: "All",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text("All topics") },
+                leadingIcon = { Icon(Icons.Filled.Category, contentDescription = null) },
+                trailingIcon = { if (selected == null) Icon(Icons.Filled.Check, contentDescription = "Selected") },
+                onClick = {
+                    onClear()
+                    open = false
+                },
+            )
+            Topic.entries.forEach { topic ->
+                val count = topicCounts[topic] ?: 0
+                DropdownMenuItem(
+                    text = { Text(if (count > 0) "${topic.label} ($count)" else topic.label) },
+                    leadingIcon = { Icon(topic.icon, contentDescription = null) },
+                    trailingIcon = { if (topic == selected) Icon(Icons.Filled.Check, contentDescription = "Selected") },
+                    enabled = count > 0 || topic == selected || topicCounts.isEmpty(),
+                    onClick = {
+                        if (topic != selected) onSelect(topic)
+                        open = false
+                    },
+                )
+            }
         }
     }
 }
@@ -318,23 +341,12 @@ private fun ModeSwitch(selected: Mode, onSelect: (Mode) -> Unit, modifier: Modif
                     .clickable { onSelect(option) },
                 contentAlignment = Alignment.Center,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(
-                        when (option) {
-                            Mode.NEWS -> Icons.Filled.Newspaper
-                            Mode.IMAGES -> Icons.Filled.PhotoLibrary
-                            Mode.SAVED -> Icons.Filled.Bookmark
-                        },
-                        contentDescription = null,
-                        tint = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        option.label,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
-                    )
-                }
+                Text(
+                    option.label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                )
             }
         }
     }
