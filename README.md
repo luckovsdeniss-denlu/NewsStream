@@ -26,8 +26,10 @@ Configured in `data/NewsRepository.kt`:
     ABC News (Australia), Google News
   - Politics: Politico, The Hill
   - Business: CNBC, The Economist, Fortune
-  - Technology: Ars Technica, TechCrunch, The Verge, Wired, MIT Technology Review, Engadget
-  - Science: NASA, ScienceDaily, New Scientist, Space.com, Phys.org
+  - Technology: Ars Technica, TechCrunch, The Verge, Wired, MIT Technology Review, Engadget, The Register,
+    Tom's Hardware, ZDNet, VentureBeat, Popular Science
+  - Science: NASA, ScienceDaily, New Scientist, Space.com, Phys.org, Nature, Science (AAAS), Scientific American,
+    Live Science, Universe Today
   - Climate: Carbon Brief, Inside Climate News
   - Health: WHO, STAT News
   - Sports: ESPN, BBC Sport, Sky Sports
