@@ -77,20 +77,3 @@ private fun request(url: String, method: String, headers: Map<String, String>, b
         connection.disconnect()
     }
 }
-
-/**
- * Fetches several pages of a JSON-array API and concatenates them. The first page must load;
- * later pages are best-effort, so one failing page doesn't lose the rest.
- */
-internal fun fetchJsonArrayPages(urls: List<String>, headers: Map<String, String> = emptyMap()): org.json.JSONArray {
-    val merged = org.json.JSONArray()
-    urls.forEachIndexed { index, url ->
-        val page = if (index == 0) {
-            org.json.JSONArray(httpGet(url, headers))
-        } else {
-            runCatching { org.json.JSONArray(httpGet(url, headers)) }.getOrNull() ?: return@forEachIndexed
-        }
-        for (i in 0 until page.length()) merged.put(page.get(i))
-    }
-    return merged
-}

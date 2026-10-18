@@ -12,10 +12,7 @@ class MastodonTrendingPostsSource(private val server: String = "mastodon.social"
     override val kind = ContentKind.SOCIAL
 
     override fun fetch(): List<Article> {
-        // The API returns at most 40 per request, so page with offset.
-        val statuses = fetchJsonArrayPages(
-            listOf(0, 40).map { "https://$server/api/v1/trends/statuses?limit=40&offset=$it" },
-        )
+        val statuses = org.json.JSONArray(httpGet("https://$server/api/v1/trends/statuses?limit=30"))
         return (0 until statuses.length()).mapNotNull { i ->
             val status = statuses.getJSONObject(i)
             if (status.optBoolean("sensitive")) return@mapNotNull null
@@ -51,10 +48,7 @@ class MastodonTrendingLinksSource(private val server: String = "mastodon.social"
     override val kind = ContentKind.SOCIAL
 
     override fun fetch(): List<Article> {
-        // The API returns at most 20 per request, so page with offset.
-        val links = fetchJsonArrayPages(
-            listOf(0, 20, 40).map { "https://$server/api/v1/trends/links?limit=20&offset=$it" },
-        )
+        val links = org.json.JSONArray(httpGet("https://$server/api/v1/trends/links?limit=20"))
         return (0 until links.length()).mapNotNull { i ->
             val link = links.getJSONObject(i)
             val title = link.optString("title").takeIf { it.isNotBlank() } ?: return@mapNotNull null

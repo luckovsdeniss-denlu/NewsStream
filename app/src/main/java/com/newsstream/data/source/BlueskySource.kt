@@ -15,7 +15,7 @@ class BlueskySource : NewsSource {
     override fun fetch(): List<Article> {
         val url = Uri.parse("https://public.api.bsky.app/xrpc/app.bsky.feed.getFeed").buildUpon()
             .appendQueryParameter("feed", DISCOVER_FEED)
-            .appendQueryParameter("limit", "90")
+            .appendQueryParameter("limit", "30")
             .build()
             .toString()
         val feed = JSONObject(httpGet(url)).getJSONArray("feed")

@@ -12,7 +12,7 @@ feed categories first, then headline keywords, then each source's default topic)
 ## Loading
 Nothing is fetched at launch: the app opens empty and loads news when you tap Load news or refresh.
 Sources are fetched at most 10 at a time and each one appears as soon as it arrives (the header shows
-progress). The feed renders 30 stories at a time and adds the next 30 as you scroll. Switched-off sources
+progress). The feed renders 10 stories at a time and adds the next 10 as you scroll. Switched-off sources
 are not downloaded.
 
 ## News sources

@@ -15,10 +15,7 @@ class LobstersSource : NewsSource {
     override val category = Topic.TECH
 
     override fun fetch(): List<Article> {
-        // 25 stories per page; take the first three pages.
-        val stories = fetchJsonArrayPages(
-            listOf("https://lobste.rs/hottest.json", "https://lobste.rs/page/2.json", "https://lobste.rs/page/3.json"),
-        )
+        val stories = JSONArray(httpGet("https://lobste.rs/hottest.json"))
         return (0 until stories.length()).mapNotNull { i ->
             val story = stories.getJSONObject(i)
             val title = story.optString("title").takeIf { it.isNotBlank() } ?: return@mapNotNull null

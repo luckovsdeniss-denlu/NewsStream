@@ -107,7 +107,7 @@ class RssNewsSource(
         val TEXT_TAGS = setOf(
             "title", "description", "summary", "pubDate", "dc:date", "published", "updated", "dc:creator", "name",
         )
-        const val MAX_ARTICLES = 90
+        const val MAX_ARTICLES = 30
         val INLINE_IMAGE = Regex("<img[^>]+src=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE)
         val IMAGE_EXTENSION = Regex("\\.(jpe?g|png|webp|gif)(\\?|$)", RegexOption.IGNORE_CASE)
     }
