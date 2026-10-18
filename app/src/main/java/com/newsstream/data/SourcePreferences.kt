@@ -13,13 +13,16 @@ class SourcePreferences(context: Context) {
         get() = prefs.getStringSet(KEY_HIDDEN, emptySet()).orEmpty().toSet()
         set(value) = prefs.edit().putStringSet(KEY_HIDDEN, value).apply()
 
-    /** Labels of the source groups folded in the sources sheet. */
-    var collapsedGroups: Set<String>
-        get() = prefs.getStringSet(KEY_COLLAPSED, emptySet()).orEmpty().toSet()
-        set(value) = prefs.edit().putStringSet(KEY_COLLAPSED, value).apply()
+    /**
+     * Labels of the source groups the user unfolded in the sources sheet. Expanded groups are
+     * stored (rather than folded ones) so every group, including ones added later, starts folded.
+     */
+    var expandedGroups: Set<String>
+        get() = prefs.getStringSet(KEY_EXPANDED, emptySet()).orEmpty().toSet()
+        set(value) = prefs.edit().putStringSet(KEY_EXPANDED, value).apply()
 
     private companion object {
         const val KEY_HIDDEN = "hidden_sources"
-        const val KEY_COLLAPSED = "collapsed_source_groups"
+        const val KEY_EXPANDED = "expanded_source_groups"
     }
 }

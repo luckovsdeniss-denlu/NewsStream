@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
                             showAll = newsViewModel::showAllSources,
                             hideAll = newsViewModel::hideAllSources,
                             showLanguage = newsViewModel::showLanguage,
-                            setGroupCollapsed = newsViewModel::setGroupCollapsed,
+                            setGroupExpanded = newsViewModel::setGroupExpanded,
                         ),
                         onToggleSave = newsViewModel::toggleSaved,
                     )

@@ -29,8 +29,8 @@ data class NewsUiState(
     val hiddenSources: Set<String> = emptySet(),
     /** Stories the user saved, newest-saved first. */
     val saved: List<Article> = emptyList(),
-    /** Source groups folded in the sources sheet; saved automatically. */
-    val collapsedGroups: Set<String> = emptySet(),
+    /** Source groups unfolded in the sources sheet (all others are folded); saved automatically. */
+    val expandedGroups: Set<String> = emptySet(),
 ) {
     val savedIds: Set<String> by lazy { saved.map { it.id }.toSet() }
 
@@ -59,7 +59,7 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
         NewsUiState(
             sources = repository.sourceInfo,
             hiddenSources = preferences.hiddenSources,
-            collapsedGroups = preferences.collapsedGroups,
+            expandedGroups = preferences.expandedGroups,
             saved = savedStore.load(),
         ),
     )
@@ -97,10 +97,10 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     fun hideAllSources() = setHidden(_state.value.sources.map { it.name }.toSet())
 
     /** Folds or unfolds a group in the sources sheet and saves the choice right away. */
-    fun setGroupCollapsed(label: String, collapsed: Boolean) {
-        val updated = if (collapsed) _state.value.collapsedGroups + label else _state.value.collapsedGroups - label
-        preferences.collapsedGroups = updated
-        _state.update { it.copy(collapsedGroups = updated) }
+    fun setGroupExpanded(label: String, expanded: Boolean) {
+        val updated = if (expanded) _state.value.expandedGroups + label else _state.value.expandedGroups - label
+        preferences.expandedGroups = updated
+        _state.update { it.copy(expandedGroups = updated) }
     }
 
     fun showLanguage(language: String?) {
