@@ -59,11 +59,11 @@ fun ImageGrid(
     Box(modifier.fillMaxSize()) {
         when {
             withImages.isNotEmpty() -> LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 150.dp),
+                columns = GridCells.Adaptive(minSize = 84.dp),
                 state = gridState,
-                contentPadding = PaddingValues(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 items(withImages, key = { it.id }) { article ->
                     ImageTile(article, onClick = { onArticleClick(article) })
@@ -98,7 +98,7 @@ private fun ImageTile(article: Article, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable(onClick = onClick),
     ) {
@@ -108,36 +108,17 @@ private fun ImageTile(article: Article, onClick: () -> Unit) {
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
-        Icon(
-            article.topic.icon,
-            contentDescription = article.topic.label,
-            tint = Color.White,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(6.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(Color.Black.copy(alpha = 0.45f))
-                .padding(4.dp)
-                .size(14.dp),
-        )
         // Headline over a dark gradient so it stays readable on any picture.
         Column(
             Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
                 .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
-                .padding(start = 8.dp, end = 8.dp, top = 20.dp, bottom = 8.dp),
+                .padding(start = 5.dp, end = 5.dp, top = 14.dp, bottom = 4.dp),
         ) {
             Text(
-                article.source.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
                 article.title,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

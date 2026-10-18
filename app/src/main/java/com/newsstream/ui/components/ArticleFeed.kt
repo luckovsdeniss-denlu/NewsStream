@@ -36,6 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
@@ -87,8 +89,8 @@ fun ArticleFeed(
         when {
             articles.isNotEmpty() -> LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 if (failedSources.isNotEmpty()) {
                     item {
@@ -133,7 +135,7 @@ fun ArticleFeed(
     }
 }
 
-private const val PAGE_SIZE = 10
+private const val PAGE_SIZE = 30
 
 /** Start loading the next page when this many items from the end are visible. */
 private const val LOAD_MORE_THRESHOLD = 3
@@ -155,6 +157,11 @@ private fun EmptyState(message: String, actionLabel: String?, onRefresh: () -> U
     }
 }
 
+/**
+ * A compact card: one line with topic icon, source and time, then the headline in at most two
+ * lines. Summary and engagement are left for the article screen so about three times as many
+ * stories fit on screen.
+ */
 @Composable
 fun ArticleCard(
     article: Article,
@@ -167,49 +174,52 @@ fun ArticleCard(
 ) {
     val social = article.kind == ContentKind.SOCIAL
     val accent = if (social) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-    Column(
+    Row(
         Modifier
             .fillMaxWidth()
             .panel(accent)
             .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (showTopic) TopicTag(article.topic, topicSelected, onTopicClick)
-            Text(
-                article.byline().uppercase(),
-                style = MaterialTheme.typography.labelMedium,
-                color = accent,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            article.timeAgo()?.let {
-                Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (showTopic) {
+                    Icon(
+                        article.topic.icon,
+                        contentDescription = article.topic.label,
+                        tint = if (topicSelected) MaterialTheme.colorScheme.onPrimaryContainer else accent,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(
+                                if (topicSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                            )
+                            .then(if (onTopicClick != null) Modifier.clickable { onTopicClick(article.topic) } else Modifier)
+                            .padding(1.dp)
+                            .size(14.dp),
+                    )
+                }
+                Text(
+                    article.byline().uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accent,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                article.timeAgo()?.let {
+                    Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
-            if (onToggleSave != null) SaveButton(saved, onToggleSave)
-        }
-        Text(
-            article.title,
-            style = if (social && article.summary.isEmpty()) {
-                MaterialTheme.typography.bodyLarge
-            } else {
-                MaterialTheme.typography.titleMedium
-            },
-            maxLines = 5,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (article.summary.isNotBlank()) {
             Text(
-                article.summary,
+                article.title,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
+                fontWeight = if (social && article.summary.isEmpty()) FontWeight.Normal else FontWeight.SemiBold,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        article.engagement?.let { EngagementRow(it) }
+        if (onToggleSave != null) SaveButton(saved, onToggleSave, Modifier.padding(start = 4.dp))
     }
 }
 

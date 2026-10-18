@@ -84,7 +84,7 @@ fun NewsStreamTheme(content: @Composable () -> Unit) {
 
 /** A translucent deep-blue card with a glowing outline in [accent]. */
 fun Modifier.panel(accent: Color): Modifier {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(12.dp)
     return clip(shape)
         .background(Brush.verticalGradient(listOf(Shelf.copy(alpha = 0.85f), Reef.copy(alpha = 0.85f))))
         .border(1.dp, Brush.linearGradient(listOf(accent, accent.copy(alpha = 0.15f))), shape)
