@@ -1,9 +1,7 @@
 name: Build APK
 
+# Builds run only on request (Actions -> Build APK -> Run workflow), not on every push.
 on:
-  push:
-    branches: [ main ]
-  pull_request:
   workflow_dispatch:
 
 jobs:

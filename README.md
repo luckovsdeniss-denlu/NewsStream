@@ -58,11 +58,11 @@ X/Twitter, Instagram and Facebook are not included: their APIs require paid or a
 Add a source by implementing `NewsSource` (or adding another `RssNewsSource` for any RSS 2.0, RSS 1.0 or Atom feed) and listing it in `NewsRepository`.
 
 ## Build
-CI builds a debug APK on every push (see `.github/workflows/build-apk.yml`).
+CI builds a debug APK on request: Actions → Build APK → Run workflow (see `.github/workflows/build-apk.yml`).
 Locally: open in Android Studio, or run `gradle :app:assembleDebug`.
 
 ## Versioning
-Every push to `main` gets a new version automatically: CI builds `versionName = 0.1.<run number>` and
+Every CI build gets a new version automatically: it builds `versionName = 0.1.<run number>` and
 `versionCode = <run number>`, and uploads `NewsStream-0.1.<run number>.apk`. To bump major/minor, change
 `baseVersion` in `app/build.gradle.kts` and the `0.1` prefix in the workflow.
 
