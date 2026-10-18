@@ -30,11 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +52,8 @@ class SourceActions(
     val hideAll: () -> Unit,
     /** Shows only sources in this language ("en", "ru"), or every source for null. */
     val showLanguage: (language: String?) -> Unit,
+    /** Folds or unfolds a source group; the choice is saved automatically. */
+    val setGroupCollapsed: (label: String, collapsed: Boolean) -> Unit,
 )
 
 private val LANGUAGES = listOf(null to "All", "en" to "English", "ru" to "Русский")
@@ -110,8 +108,8 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
             // Sources grouped by the topic they cover (social platforms last), each group in its
             // topic's colour. Chips wrap so the whole list is visible at once (scrolling only if a
             // very small screen can't fit it).
-            // Labels of folded groups; all start open. Kept while the sheet is open (and on rotation).
-            var collapsed by rememberSaveable { mutableStateOf(emptySet<String>()) }
+            // Folded groups come from saved settings, so they stay folded across app restarts.
+            val collapsed = state.collapsedGroups
             val groups = remember(state.sources) {
                 Topic.entries.map { topic ->
                     SourceGroup(
@@ -142,7 +140,7 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(6.dp))
-                            .clickable { collapsed = if (expanded) collapsed + group.label else collapsed - group.label }
+                            .clickable { actions.setGroupCollapsed(group.label, expanded) }
                             .padding(vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
