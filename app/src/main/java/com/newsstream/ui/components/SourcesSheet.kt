@@ -14,7 +14,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -28,8 +32,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.newsstream.data.ContentKind
 import com.newsstream.data.SourceInfo
+import com.newsstream.data.Topic
+import com.newsstream.ui.SocialColor
+import com.newsstream.ui.color
+import com.newsstream.ui.icon
 import com.newsstream.ui.NewsUiState
 
 /** Callbacks for changing which sources are shown. */
@@ -90,34 +100,67 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
                     )
                 }
             }
-            // Every source as a compact chip, wrapping so the whole list is visible at once
-            // (scrolls only if a very small screen can't fit it).
-            val sorted = remember(state.sources) { state.sources.sortedBy { it.name.lowercase() } }
-            FlowRow(
+            // Sources grouped by the topic they cover (social platforms last), each group in its
+            // topic's colour. Chips wrap so the whole list is visible at once (scrolling only if a
+            // very small screen can't fit it).
+            val groups = remember(state.sources) {
+                Topic.entries.map { topic ->
+                    SourceGroup(
+                        label = topic.label,
+                        icon = topic.icon,
+                        color = topic.color,
+                        sources = state.sources.filter { it.kind == ContentKind.NEWS && it.category == topic },
+                    )
+                } + SourceGroup(
+                    label = "Social",
+                    icon = Icons.Filled.Forum,
+                    color = SocialColor,
+                    sources = state.sources.filter { it.kind == ContentKind.SOCIAL },
+                )
+            }
+            Column(
                 Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                sorted.forEach { source ->
-                    SourceChip(
-                        source = source,
-                        selected = source.name !in state.hiddenSources,
-                        failed = source.name in state.allFailedSources,
-                        onToggle = { actions.setVisible(source.name, it) },
-                    )
+                groups.filter { it.sources.isNotEmpty() }.forEach { group ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(group.icon, contentDescription = null, tint = group.color, modifier = Modifier.size(14.dp))
+                        Text(group.label.uppercase(), style = MaterialTheme.typography.labelSmall, color = group.color)
+                    }
+                    FlowRow(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        group.sources.sortedBy { it.name.lowercase() }.forEach { source ->
+                            SourceChip(
+                                source = source,
+                                color = group.color,
+                                selected = source.name !in state.hiddenSources,
+                                failed = source.name in state.allFailedSources,
+                                onToggle = { actions.setVisible(source.name, it) },
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-/** A compact toggle: filled when selected; a source that failed to load shows its name in red. */
+private class SourceGroup(val label: String, val icon: ImageVector, val color: Color, val sources: List<SourceInfo>)
+
+/**
+ * A compact toggle in its group's colour: tinted fill when selected, coloured outline when not.
+ * A source that failed to load shows its name in red.
+ */
 @Composable
 private fun SourceChip(
     source: SourceInfo,
+    color: Color,
     selected: Boolean,
     failed: Boolean,
     onToggle: (Boolean) -> Unit,
@@ -128,15 +171,15 @@ private fun SourceChip(
         style = MaterialTheme.typography.labelMedium,
         color = when {
             failed -> MaterialTheme.colorScheme.error
-            selected -> MaterialTheme.colorScheme.onPrimaryContainer
+            selected -> color
             else -> MaterialTheme.colorScheme.onSurfaceVariant
         },
         maxLines = 1,
         modifier = Modifier
             .clip(shape)
-            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-            .border(1.dp, if (selected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant, shape)
+            .background(if (selected) color.copy(alpha = 0.22f) else Color.Transparent)
+            .border(1.dp, color.copy(alpha = if (selected) 0.6f else 0.3f), shape)
             .clickable { onToggle(!selected) }
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .padding(horizontal = 9.dp, vertical = 5.dp),
     )
 }
