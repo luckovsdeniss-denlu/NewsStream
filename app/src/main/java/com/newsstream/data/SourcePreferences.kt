@@ -3,15 +3,15 @@ package com.newsstream.data
 import android.content.Context
 
 /**
- * Remembers which sources the user switched off and which source groups they folded. Hidden sources are stored (rather than
- * selected ones) so sources added in future versions show up by default.
+ * Remembers which sources the user selected and which source groups they unfolded. Nothing is
+ * selected at first: the user picks their sources, and sources added later also start off.
  */
 class SourcePreferences(context: Context) {
     private val prefs = context.getSharedPreferences("newsstream", Context.MODE_PRIVATE)
 
-    var hiddenSources: Set<String>
-        get() = prefs.getStringSet(KEY_HIDDEN, emptySet()).orEmpty().toSet()
-        set(value) = prefs.edit().putStringSet(KEY_HIDDEN, value).apply()
+    var selectedSources: Set<String>
+        get() = prefs.getStringSet(KEY_SELECTED, emptySet()).orEmpty().toSet()
+        set(value) = prefs.edit().putStringSet(KEY_SELECTED, value).apply()
 
     /**
      * Labels of the source groups the user unfolded in the sources sheet. Expanded groups are
@@ -22,7 +22,7 @@ class SourcePreferences(context: Context) {
         set(value) = prefs.edit().putStringSet(KEY_EXPANDED, value).apply()
 
     private companion object {
-        const val KEY_HIDDEN = "hidden_sources"
+        const val KEY_SELECTED = "selected_sources"
         const val KEY_EXPANDED = "expanded_source_groups"
     }
 }

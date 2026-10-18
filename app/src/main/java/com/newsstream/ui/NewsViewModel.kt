@@ -36,6 +36,9 @@ data class NewsUiState(
 
     val isLoading: Boolean get() = loadingSources > 0
 
+    /** The user hasn't selected any source yet (the starting state). */
+    val noSourcesSelected: Boolean get() = sources.isNotEmpty() && sources.all { it.name in hiddenSources }
+
     /** Nothing has been fetched yet: the app doesn't load news until the user asks. */
     val notLoadedYet: Boolean get() = !isLoading && allArticles.isEmpty() && allFailedSources.isEmpty()
 
@@ -58,7 +61,8 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(
         NewsUiState(
             sources = repository.sourceInfo,
-            hiddenSources = preferences.hiddenSources,
+            // Every source not explicitly selected is off, so a fresh install starts with none.
+            hiddenSources = repository.sourceInfo.map { it.name }.toSet() - preferences.selectedSources,
             expandedGroups = preferences.expandedGroups,
             saved = savedStore.load(),
         ),
@@ -164,7 +168,7 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun setHidden(hidden: Set<String>) {
-        preferences.hiddenSources = hidden
+        preferences.selectedSources = _state.value.sources.map { it.name }.toSet() - hidden
         _state.update { it.copy(hiddenSources = hidden) }
     }
 

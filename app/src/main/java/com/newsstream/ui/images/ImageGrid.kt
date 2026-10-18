@@ -49,6 +49,8 @@ fun ImageGrid(
     isLoading: Boolean,
     notLoadedYet: Boolean,
     onLoad: () -> Unit,
+    idleMessage: String = "No news loaded yet.",
+    idleActionLabel: String = "Load news",
     onArticleClick: (Article) -> Unit,
     modifier: Modifier = Modifier,
     resetKey: Any? = null,
@@ -75,8 +77,8 @@ fun ImageGrid(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("No news loaded yet.", style = MaterialTheme.typography.bodyMedium)
-                OutlinedButton(onClick = onLoad) { Text("Load news") }
+                Text(idleMessage, style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(onClick = onLoad) { Text(idleActionLabel) }
             }
             else -> Text(
                 "No images for the selected topics yet.",

@@ -78,6 +78,8 @@ fun HomeScreen(
         SourcesSheet(state, sourceActions, onDismiss = { showSources = false })
     }
     val sourcesFiltered = state.hiddenSources.isNotEmpty()
+    val chooseSources: () -> Unit = { showSources = true }
+    val noSourcesMessage = "No sources selected yet. Choose the sources you want to follow."
     // The selected topic (one at a time, empty for all), saved by name so it survives rotation.
     var topicNames by rememberSaveable { mutableStateOf("") }
     val selectedTopics = remember(topicNames) {
@@ -170,7 +172,9 @@ fun HomeScreen(
                         articles = visible,
                         isLoading = state.isLoading,
                         notLoadedYet = state.notLoadedYet,
-                        onLoad = onRefresh,
+                        onLoad = if (state.noSourcesSelected) chooseSources else onRefresh,
+                        idleMessage = if (state.noSourcesSelected) noSourcesMessage else "No news loaded yet.",
+                        idleActionLabel = if (state.noSourcesSelected) "Choose sources" else "Load news",
                         onArticleClick = onArticleClick,
                         resetKey = "$topicNames|${state.hiddenSources.sorted()}",
                     )
@@ -179,9 +183,11 @@ fun HomeScreen(
                         articles = visible,
                         isLoading = state.isLoading,
                         failedSources = state.failedSources,
-                        onRefresh = onRefresh,
+                        onRefresh = if (state.noSourcesSelected) chooseSources else onRefresh,
                         onArticleClick = onArticleClick,
-                        emptyMessage = if (state.notLoadedYet) {
+                        emptyMessage = if (state.noSourcesSelected) {
+                            noSourcesMessage
+                        } else if (state.notLoadedYet) {
                             "No news loaded yet."
                         } else if (state.allArticles.isNotEmpty() && state.articles.isEmpty()) {
                             "No sources selected. Tap the sources button to choose some."
@@ -190,7 +196,11 @@ fun HomeScreen(
                         } else {
                             "No stories match these filters."
                         },
-                        emptyActionLabel = if (state.notLoadedYet) "Load news" else "Try again",
+                        emptyActionLabel = when {
+                            state.noSourcesSelected -> "Choose sources"
+                            state.notLoadedYet -> "Load news"
+                            else -> "Try again"
+                        },
                         onTopicClick = toggleTopic,
                         selectedTopics = selectedTopics,
                         pageResetKey = "$topicNames|${state.hiddenSources.sorted()}",
