@@ -30,13 +30,13 @@ class RedditSource(
     override fun fetch(): List<Article> = if (clientId.isNotBlank()) fetchFromApi() else fetchFromFeed()
 
     private fun fetchFromFeed(): List<Article> =
-        RssNewsSource(name, "https://www.reddit.com/r/$subreddit/hot/.rss", defaultTopic, REDDIT_HEADERS)
+        RssNewsSource(name, "https://www.reddit.com/r/$subreddit/hot/.rss?limit=90", defaultTopic, REDDIT_HEADERS)
             .fetch()
             .map { it.copy(kind = ContentKind.SOCIAL, discussionUrl = it.url) }
 
     private fun fetchFromApi(): List<Article> {
         val headers = REDDIT_HEADERS + ("Authorization" to "Bearer ${accessToken(clientId)}")
-        val children = JSONObject(httpGet("https://oauth.reddit.com/r/$subreddit/hot?limit=30&raw_json=1", headers))
+        val children = JSONObject(httpGet("https://oauth.reddit.com/r/$subreddit/hot?limit=90&raw_json=1", headers))
             .getJSONObject("data").getJSONArray("children")
         return (0 until children.length()).mapNotNull { i ->
             val post = children.getJSONObject(i).getJSONObject("data")

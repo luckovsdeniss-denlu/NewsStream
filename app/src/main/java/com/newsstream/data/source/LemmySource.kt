@@ -14,8 +14,17 @@ class LemmySource(private val instance: String = "lemmy.world") : NewsSource {
     override val category = Topic.GENERAL
 
     override fun fetch(): List<Article> {
-        val posts = JSONObject(httpGet("https://$instance/api/v3/post/list?sort=Hot&type_=All&limit=30"))
-            .getJSONArray("posts")
+        // At most 50 posts per page; take two pages.
+        val posts = org.json.JSONArray()
+        for (page in 1..2) {
+            val url = "https://$instance/api/v3/post/list?sort=Hot&type_=All&limit=50&page=$page"
+            val batch = if (page == 1) {
+                JSONObject(httpGet(url)).getJSONArray("posts")
+            } else {
+                runCatching { JSONObject(httpGet(url)).getJSONArray("posts") }.getOrNull() ?: break
+            }
+            for (i in 0 until batch.length()) posts.put(batch.get(i))
+        }
         return (0 until posts.length()).mapNotNull { i ->
             val view = posts.getJSONObject(i)
             val post = view.getJSONObject("post")

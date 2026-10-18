@@ -14,7 +14,7 @@ class HackerNewsSource : NewsSource {
     override val category = Topic.TECH
 
     override fun fetch(): List<Article> {
-        val hits = JSONObject(httpGet("https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=30"))
+        val hits = JSONObject(httpGet("https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=90"))
             .getJSONArray("hits")
         return (0 until hits.length()).mapNotNull { i ->
             val hit = hits.getJSONObject(i)

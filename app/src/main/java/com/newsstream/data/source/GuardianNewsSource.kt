@@ -12,15 +12,22 @@ class GuardianNewsSource(private val apiKey: String) : NewsSource {
     override val category = Topic.WORLD
 
     override fun fetch(): List<Article> {
-        val url = Uri.parse("https://content.guardianapis.com/search").buildUpon()
-            .appendQueryParameter("api-key", apiKey)
-            .appendQueryParameter("order-by", "newest")
-            .appendQueryParameter("page-size", "20")
-            .appendQueryParameter("type", "article")
-            .appendQueryParameter("show-fields", "trailText,bodyText,thumbnail")
-            .build()
-            .toString()
-        val results = JSONObject(httpGet(url)).getJSONObject("response").getJSONArray("results")
+        // Two pages of 30 (the first must load, the second is best-effort).
+        val results = org.json.JSONArray()
+        for (page in 1..2) {
+            val url = Uri.parse("https://content.guardianapis.com/search").buildUpon()
+                .appendQueryParameter("api-key", apiKey)
+                .appendQueryParameter("order-by", "newest")
+                .appendQueryParameter("page-size", "30")
+                .appendQueryParameter("page", "$page")
+                .appendQueryParameter("type", "article")
+                .appendQueryParameter("show-fields", "trailText,bodyText,thumbnail")
+                .build()
+                .toString()
+            val load = { JSONObject(httpGet(url)).getJSONObject("response").getJSONArray("results") }
+            val batch = if (page == 1) load() else runCatching(load).getOrNull() ?: break
+            for (i in 0 until batch.length()) results.put(batch.get(i))
+        }
         return (0 until results.length()).map { i ->
             val item = results.getJSONObject(i)
             val fields = item.optJSONObject("fields")

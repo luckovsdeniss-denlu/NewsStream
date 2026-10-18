@@ -133,7 +133,7 @@ fun ArticleFeed(
     }
 }
 
-private const val PAGE_SIZE = 10
+private const val PAGE_SIZE = 30
 
 /** Start loading the next page when this many items from the end are visible. */
 private const val LOAD_MORE_THRESHOLD = 3

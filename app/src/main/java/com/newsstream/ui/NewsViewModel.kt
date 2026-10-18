@@ -159,6 +159,6 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private companion object {
-        const val PREFETCH_PER_SOURCE = 8
+        const val PREFETCH_PER_SOURCE = 24
     }
 }
