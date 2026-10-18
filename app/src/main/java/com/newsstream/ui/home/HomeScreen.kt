@@ -286,7 +286,7 @@ private fun TopicButton(
     }
 }
 
-/** Refresh as a labelled pill whose sync arrows spin while sources are loading. */
+/** Refresh as a single sync icon that spins while sources are loading. */
 @Composable
 private fun UpdateButton(isLoading: Boolean, onClick: () -> Unit) {
     val rotation by rememberInfiniteTransition(label = "update").animateFloat(
@@ -295,26 +295,12 @@ private fun UpdateButton(isLoading: Boolean, onClick: () -> Unit) {
         animationSpec = infiniteRepeatable(tween(durationMillis = 900, easing = LinearEasing)),
         label = "spin",
     )
-    Row(
-        Modifier
-            .padding(end = 8.dp)
-            .clip(RoundedCornerShape(50))
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .clickable(enabled = !isLoading, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
+    IconButton(onClick = onClick, enabled = !isLoading) {
         Icon(
             Icons.Filled.Sync,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(18.dp).rotate(if (isLoading) -rotation else 0f),
-        )
-        Text(
-            if (isLoading) "Updating" else "Update",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            contentDescription = if (isLoading) "Updating" else "Update",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.rotate(if (isLoading) -rotation else 0f),
         )
     }
 }
