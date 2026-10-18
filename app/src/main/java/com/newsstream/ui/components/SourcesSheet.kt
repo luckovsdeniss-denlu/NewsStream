@@ -1,5 +1,6 @@
 package com.newsstream.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -27,7 +30,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -103,6 +110,8 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
             // Sources grouped by the topic they cover (social platforms last), each group in its
             // topic's colour. Chips wrap so the whole list is visible at once (scrolling only if a
             // very small screen can't fit it).
+            // Labels of folded groups; all start open. Kept while the sheet is open (and on rotation).
+            var collapsed by rememberSaveable { mutableStateOf(emptySet<String>()) }
             val groups = remember(state.sources) {
                 Topic.entries.map { topic ->
                     SourceGroup(
@@ -126,23 +135,48 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 groups.filter { it.sources.isNotEmpty() }.forEach { group ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val expanded = group.label !in collapsed
+                    val onCount = group.sources.count { it.name !in state.hiddenSources }
+                    // Tap the header to fold the group away or open it again.
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { collapsed = if (expanded) collapsed + group.label else collapsed - group.label }
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
                         Icon(group.icon, contentDescription = null, tint = group.color, modifier = Modifier.size(14.dp))
                         Text(group.label.uppercase(), style = MaterialTheme.typography.labelSmall, color = group.color)
+                        Text(
+                            "$onCount/${group.sources.size}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            if (expanded) Icons.Filled.ExpandMore else Icons.Filled.ChevronRight,
+                            contentDescription = if (expanded) "Collapse ${group.label}" else "Expand ${group.label}",
+                            tint = group.color,
+                            modifier = Modifier.size(18.dp),
+                        )
                     }
-                    FlowRow(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
-                        verticalArrangement = Arrangement.spacedBy(5.dp),
-                    ) {
-                        group.sources.sortedBy { it.name.lowercase() }.forEach { source ->
-                            SourceChip(
-                                source = source,
-                                color = group.color,
-                                selected = source.name !in state.hiddenSources,
-                                failed = source.name in state.allFailedSources,
-                                onToggle = { actions.setVisible(source.name, it) },
-                            )
+                    AnimatedVisibility(visible = expanded) {
+                        FlowRow(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            verticalArrangement = Arrangement.spacedBy(5.dp),
+                        ) {
+                            group.sources.sortedBy { it.name.lowercase() }.forEach { source ->
+                                SourceChip(
+                                    source = source,
+                                    color = group.color,
+                                    selected = source.name !in state.hiddenSources,
+                                    failed = source.name in state.allFailedSources,
+                                    onToggle = { actions.setVisible(source.name, it) },
+                                )
+                            }
                         }
                     }
                 }
