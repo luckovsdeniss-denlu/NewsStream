@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -69,7 +70,8 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
+        // Full screen height regardless of how many groups are open.
+        Column(Modifier.fillMaxSize().navigationBarsPadding()) {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -126,6 +128,7 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
             Column(
                 Modifier
                     .fillMaxWidth()
+                    .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
