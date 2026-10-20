@@ -31,6 +31,8 @@ data class NewsUiState(
     val saved: List<Article> = emptyList(),
     /** Source groups unfolded in the sources sheet (all others are folded); saved automatically. */
     val expandedGroups: Set<String> = emptySet(),
+    /** Size stories and images are shown at; saved automatically. */
+    val viewSize: ViewSize = ViewSize.DEFAULT,
 ) {
     val savedIds: Set<String> by lazy { saved.map { it.id }.toSet() }
 
@@ -64,6 +66,7 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
             // Every source not explicitly selected is off, so a fresh install starts with none.
             hiddenSources = repository.sourceInfo.map { it.name }.toSet() - preferences.selectedSources,
             expandedGroups = preferences.expandedGroups,
+            viewSize = ViewSize.fromName(preferences.viewSize),
             saved = savedStore.load(),
         ),
     )
@@ -105,6 +108,11 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
         val updated = if (expanded) _state.value.expandedGroups + label else _state.value.expandedGroups - label
         preferences.expandedGroups = updated
         _state.update { it.copy(expandedGroups = updated) }
+    }
+
+    fun setViewSize(size: ViewSize) {
+        preferences.viewSize = size.name
+        _state.update { it.copy(viewSize = size) }
     }
 
     fun showLanguage(language: String?) {

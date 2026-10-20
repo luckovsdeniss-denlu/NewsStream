@@ -9,8 +9,8 @@ import coil.request.ImageRequest
  */
 const val THUMBNAIL_PX = 240
 
-fun thumbnailRequest(context: Context, url: String): ImageRequest =
+fun thumbnailRequest(context: Context, url: String, sizePx: Int = THUMBNAIL_PX): ImageRequest =
     ImageRequest.Builder(context)
         .data(url)
-        .size(THUMBNAIL_PX)
+        .size(sizePx)
         .build()

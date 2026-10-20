@@ -6,6 +6,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -50,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
 import com.newsstream.data.Topic
 import com.newsstream.ui.NewsUiState
+import com.newsstream.ui.ViewSize
 import com.newsstream.ui.components.ArticleFeed
 import com.newsstream.ui.components.SourceActions
 import com.newsstream.ui.components.SourcesSheet
@@ -71,6 +73,7 @@ fun HomeScreen(
     onArticleClick: (Article) -> Unit,
     sourceActions: SourceActions,
     onToggleSave: (Article) -> Unit,
+    onViewSizeChange: (ViewSize) -> Unit,
 ) {
     var mode by rememberSaveable { mutableStateOf(Mode.NEWS) }
     var showSources by rememberSaveable { mutableStateOf(false) }
@@ -120,6 +123,7 @@ fun HomeScreen(
                         }
                     },
                     actions = {
+                        SizeButton(state.viewSize, onViewSizeChange)
                         IconButton(onClick = { showSources = true }) {
                             Icon(
                                 Icons.Filled.RssFeed,
@@ -166,6 +170,7 @@ fun HomeScreen(
                         pageResetKey = "saved|$topicNames",
                         savedIds = state.savedIds,
                         onToggleSave = onToggleSave,
+                        size = state.viewSize,
                     )
                 } else if (mode == Mode.IMAGES) {
                     ImageGrid(
@@ -177,6 +182,7 @@ fun HomeScreen(
                         idleActionLabel = if (state.noSourcesSelected) "Choose sources" else "Load news",
                         onArticleClick = onArticleClick,
                         resetKey = "$topicNames|${state.hiddenSources.sorted()}",
+                        size = state.viewSize,
                     )
                 } else {
                     ArticleFeed(
@@ -206,6 +212,7 @@ fun HomeScreen(
                         pageResetKey = "$topicNames|${state.hiddenSources.sorted()}",
                         savedIds = state.savedIds,
                         onToggleSave = onToggleSave,
+                        size = state.viewSize,
                     )
                 }
             }
@@ -342,6 +349,29 @@ private fun ModeSwitch(selected: Mode, onSelect: (Mode) -> Unit, modifier: Modif
                     style = MaterialTheme.typography.labelLarge,
                     color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
                     maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+/** Top-bar button choosing how big stories and images are: full screen, ×2, ×3 or ×5 smaller. */
+@Composable
+private fun SizeButton(selected: ViewSize, onSelect: (ViewSize) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(Icons.Filled.ViewModule, contentDescription = "Size", tint = MaterialTheme.colorScheme.primary)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            ViewSize.entries.forEach { size ->
+                DropdownMenuItem(
+                    text = { Text(size.label) },
+                    trailingIcon = { if (size == selected) Icon(Icons.Filled.Check, contentDescription = "Selected") },
+                    onClick = {
+                        onSelect(size)
+                        open = false
+                    },
                 )
             }
         }

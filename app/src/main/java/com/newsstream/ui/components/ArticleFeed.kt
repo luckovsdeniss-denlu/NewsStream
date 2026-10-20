@@ -8,6 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import com.newsstream.ui.ViewSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -69,6 +74,7 @@ fun ArticleFeed(
     pageResetKey: Any? = null,
     savedIds: Set<String> = emptySet(),
     onToggleSave: ((Article) -> Unit)? = null,
+    size: ViewSize = ViewSize.DEFAULT,
 ) {
     // Show articles a page at a time; the next page is added when the user nears the end.
     var shownCount by rememberSaveable(pageResetKey) { mutableIntStateOf(PAGE_SIZE) }
@@ -103,6 +109,9 @@ fun ArticleFeed(
                 }
                 items(shown, key = { it.id }) { article ->
                     ArticleCard(
+                        size = size,
+                        // Each card takes its share of the screen: 1, 2, 3 or 5 per screen.
+                        modifier = Modifier.fillParentMaxHeight(size.cardFraction),
                         article = article,
                         showTopic = showTopic,
                         onClick = { onArticleClick(article) },
@@ -157,11 +166,7 @@ private fun EmptyState(message: String, actionLabel: String?, onRefresh: () -> U
     }
 }
 
-/**
- * A compact card: one line with topic icon, source and time, then the headline in at most two
- * lines. Summary and engagement are left for the article screen so about three times as many
- * stories fit on screen.
- */
+/** A story card in the chosen [size]: from a full-screen story to a compact two-line row. */
 @Composable
 fun ArticleCard(
     article: Article,
@@ -171,55 +176,135 @@ fun ArticleCard(
     topicSelected: Boolean = false,
     saved: Boolean = false,
     onToggleSave: (() -> Unit)? = null,
+    size: ViewSize = ViewSize.DEFAULT,
+    modifier: Modifier = Modifier,
 ) {
     val social = article.kind == ContentKind.SOCIAL
     val accent = if (social) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .panel(accent)
-            .clickable(onClick = onClick)
-            .padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (showTopic) {
-                    Icon(
-                        article.topic.icon,
-                        contentDescription = article.topic.label,
-                        tint = if (topicSelected) MaterialTheme.colorScheme.onPrimaryContainer else accent,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(
-                                if (topicSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                            )
-                            .then(if (onTopicClick != null) Modifier.clickable { onTopicClick(article.topic) } else Modifier)
-                            .padding(1.dp)
-                            .size(14.dp),
+    val header: @Composable () -> Unit = {
+        CardHeader(article, accent, showTopic, topicSelected, onTopicClick, saved, onToggleSave)
+    }
+    val base = modifier.fillMaxWidth().panel(accent).clickable(onClick = onClick)
+    when (size) {
+        ViewSize.FULL, ViewSize.HALF -> Column(base) {
+            val image = article.imageUrl ?: article.gridImageUrl
+            if (image != null) {
+                AsyncImage(
+                    model = image,
+                    contentDescription = article.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                )
+            }
+            Column(
+                Modifier.fillMaxWidth().padding(12.dp).then(if (image == null) Modifier.weight(1f) else Modifier),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                header()
+                Text(
+                    article.title,
+                    style = if (size == ViewSize.FULL) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
+                    maxLines = if (image == null) 8 else if (size == ViewSize.FULL) 4 else 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (article.summary.isNotBlank()) {
+                    Text(
+                        article.summary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = when {
+                            image == null -> 12
+                            size == ViewSize.FULL -> 5
+                            else -> 2
+                        },
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Text(
-                    article.byline().uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = accent,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                if (size == ViewSize.FULL) article.engagement?.let { EngagementRow(it) }
+            }
+        }
+        ViewSize.THIRD -> Row(base.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            article.gridImageUrl?.let { url ->
+                AsyncImage(
+                    model = url,
+                    contentDescription = article.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxHeight().aspectRatio(1f).clip(RoundedCornerShape(8.dp)),
                 )
-                article.timeAgo()?.let {
-                    Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                header()
+                Text(
+                    article.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (article.summary.isNotBlank()) {
+                    Text(
+                        article.summary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
+        }
+        ViewSize.FIFTH -> Column(
+            base.padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+        ) {
+            header()
             Text(
                 article.title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (social && article.summary.isEmpty()) FontWeight.Normal else FontWeight.SemiBold,
-                maxLines = 2,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        if (onToggleSave != null) SaveButton(saved, onToggleSave, Modifier.padding(start = 4.dp))
+    }
+}
+
+/** Topic icon, source and time on one line, with the bookmark at the end. */
+@Composable
+private fun CardHeader(
+    article: Article,
+    accent: Color,
+    showTopic: Boolean,
+    topicSelected: Boolean,
+    onTopicClick: ((Topic) -> Unit)?,
+    saved: Boolean,
+    onToggleSave: (() -> Unit)?,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (showTopic) {
+            Icon(
+                article.topic.icon,
+                contentDescription = article.topic.label,
+                tint = if (topicSelected) MaterialTheme.colorScheme.onPrimaryContainer else accent,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(if (topicSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                    .then(if (onTopicClick != null) Modifier.clickable { onTopicClick(article.topic) } else Modifier)
+                    .padding(1.dp)
+                    .size(14.dp),
+            )
+        }
+        Text(
+            article.byline().uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = accent,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        article.timeAgo()?.let {
+            Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (onToggleSave != null) SaveButton(saved, onToggleSave, Modifier.padding(start = 2.dp))
     }
 }
 

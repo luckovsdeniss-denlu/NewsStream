@@ -21,7 +21,13 @@ class SourcePreferences(context: Context) {
         get() = prefs.getStringSet(KEY_EXPANDED, emptySet()).orEmpty().toSet()
         set(value) = prefs.edit().putStringSet(KEY_EXPANDED, value).apply()
 
+    /** The chosen story/image size (a ViewSize name), or null for the default. */
+    var viewSize: String?
+        get() = prefs.getString(KEY_VIEW_SIZE, null)
+        set(value) = prefs.edit().putString(KEY_VIEW_SIZE, value).apply()
+
     private companion object {
+        const val KEY_VIEW_SIZE = "view_size"
         const val KEY_SELECTED = "selected_sources"
         const val KEY_EXPANDED = "expanded_source_groups"
     }

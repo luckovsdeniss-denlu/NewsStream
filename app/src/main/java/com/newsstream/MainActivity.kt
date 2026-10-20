@@ -47,6 +47,7 @@ class MainActivity : ComponentActivity() {
                             setGroupExpanded = newsViewModel::setGroupExpanded,
                         ),
                         onToggleSave = newsViewModel::toggleSaved,
+                        onViewSizeChange = newsViewModel::setViewSize,
                     )
                 }
             }

@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -36,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.newsstream.data.Article
+import com.newsstream.ui.ViewSize
 import com.newsstream.ui.icon
 
 /**
@@ -54,21 +58,33 @@ fun ImageGrid(
     onArticleClick: (Article) -> Unit,
     modifier: Modifier = Modifier,
     resetKey: Any? = null,
+    size: ViewSize = ViewSize.DEFAULT,
 ) {
     val withImages = remember(articles) { articles.filter { it.gridImageUrl != null } }
-    val gridState = rememberSaveable(resetKey, saver = LazyGridState.Saver) { LazyGridState() }
+    val gridState = rememberSaveable(resetKey, size, saver = LazyGridState.Saver) { LazyGridState() }
+    val listState = rememberSaveable(resetKey, size, saver = LazyListState.Saver) { LazyListState() }
 
     Box(modifier.fillMaxSize()) {
         when {
+            // Full screen: one whole picture per screen, with its caption.
+            withImages.isNotEmpty() && size == ViewSize.FULL -> LazyColumn(
+                state = listState,
+                contentPadding = PaddingValues(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(withImages, key = { it.id }) { article ->
+                    FullImage(article, Modifier.fillParentMaxHeight(), onClick = { onArticleClick(article) })
+                }
+            }
             withImages.isNotEmpty() -> LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 84.dp),
+                columns = GridCells.Fixed(size.imageColumns),
                 state = gridState,
                 contentPadding = PaddingValues(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 items(withImages, key = { it.id }) { article ->
-                    ImageTile(article, onClick = { onArticleClick(article) })
+                    ImageTile(article, size, onClick = { onArticleClick(article) })
                 }
             }
             isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -91,11 +107,12 @@ fun ImageGrid(
 }
 
 @Composable
-private fun ImageTile(article: Article, onClick: () -> Unit) {
+private fun ImageTile(article: Article, size: ViewSize, onClick: () -> Unit) {
     val context = LocalContext.current
     val url = article.gridImageUrl ?: return
-    // Same request as the prefetch, so a warmed image is a memory-cache hit.
-    val request = remember(url) { thumbnailRequest(context, url) }
+    // The smallest size uses the same request as the prefetch, so a warmed image is a
+    // memory-cache hit; larger tiles decode a bigger version (from the disk cache when warmed).
+    val request = remember(url, size) { thumbnailRequest(context, url, THUMBNAIL_PX * 5 / size.imageColumns) }
     Box(
         Modifier
             .fillMaxWidth()
@@ -110,6 +127,7 @@ private fun ImageTile(article: Article, onClick: () -> Unit) {
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
+        if (size == ViewSize.FIFTH) return@Box
         // Headline over a dark gradient so it stays readable on any picture.
         Column(
             Modifier
@@ -120,9 +138,52 @@ private fun ImageTile(article: Article, onClick: () -> Unit) {
         ) {
             Text(
                 article.title,
-                style = MaterialTheme.typography.labelSmall,
+                style = if (size == ViewSize.HALF) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelSmall,
                 color = Color.White,
-                maxLines = 2,
+                maxLines = if (size == ViewSize.HALF) 3 else 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/** One picture filling the screen height, shown whole (not cropped), with source and headline. */
+@Composable
+private fun FullImage(article: Article, modifier: Modifier, onClick: () -> Unit) {
+    val url = article.imageUrl ?: article.gridImageUrl ?: return
+    Box(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.Black)
+            .clickable(onClick = onClick),
+    ) {
+        AsyncImage(
+            model = url,
+            contentDescription = article.title,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Column(
+            Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))))
+                .padding(start = 14.dp, end = 14.dp, top = 32.dp, bottom = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                article.source.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                article.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
         }
