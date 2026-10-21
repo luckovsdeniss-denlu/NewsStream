@@ -206,6 +206,7 @@ fun ArticleCard(
     val base = modifier.fillMaxWidth().panel(accent).clickable(onClick = onClick)
     when (size) {
         ViewSize.FULL, ViewSize.HALF -> Column(base) {
+            val full = size == ViewSize.FULL
             val image = article.imageUrl ?: article.gridImageUrl
             if (image != null) {
                 val context = LocalContext.current
@@ -213,34 +214,42 @@ fun ArticleCard(
                     model = remember(image, size) { sizedRequest(context, image, pixelsFor(size), article.gridImageUrl) },
                     contentDescription = article.title,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    // Full size gives the text most of the card: the photo takes 45% of its height.
+                    modifier = Modifier.fillMaxWidth().weight(if (full) 0.45f else 1f),
                 )
             }
             Column(
-                Modifier.fillMaxWidth().padding(12.dp).then(if (image == null) Modifier.weight(1f) else Modifier),
+                Modifier
+                    .fillMaxWidth()
+                    .then(if (image == null || full) Modifier.weight(if (full && image != null) 0.55f else 1f) else Modifier)
+                    .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 header()
                 Text(
                     article.title,
-                    style = if (size == ViewSize.FULL) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
-                    maxLines = if (image == null) 8 else if (size == ViewSize.FULL) 4 else 3,
+                    style = if (full) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
+                    maxLines = if (image == null) 8 else if (full) 4 else 3,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (article.summary.isNotBlank()) {
+                // Full size shows as much text as fits: the article's opening paragraphs when the
+                // source provides full text, otherwise the summary.
+                val text = if (full && article.body.isNotEmpty()) article.body.joinToString("\n\n") else article.summary
+                if (text.isNotBlank()) {
                     Text(
-                        article.summary,
+                        text,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = when {
+                            full -> Int.MAX_VALUE
                             image == null -> 12
-                            size == ViewSize.FULL -> 5
                             else -> 2
                         },
                         overflow = TextOverflow.Ellipsis,
+                        modifier = if (full) Modifier.weight(1f, fill = false) else Modifier,
                     )
                 }
-                if (size == ViewSize.FULL) article.engagement?.let { EngagementRow(it) }
+                if (full) article.engagement?.let { EngagementRow(it) }
             }
         }
         ViewSize.THIRD -> Row(base.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
