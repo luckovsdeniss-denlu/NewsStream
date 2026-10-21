@@ -40,7 +40,10 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
+import com.newsstream.ui.images.pixelsFor
+import com.newsstream.ui.images.sizedRequest
 import com.newsstream.data.Article
 import com.newsstream.data.ContentKind
 import com.newsstream.data.SourceInfo
@@ -167,8 +170,10 @@ private fun VideoTile(video: Article, size: ViewSize) {
                 .clip(RoundedCornerShape(10.dp))
                 .background(Color.Black),
         ) {
+            val context = LocalContext.current
+            val url = if (size == ViewSize.FULL) video.imageUrl ?: video.gridImageUrl else video.gridImageUrl
             AsyncImage(
-                model = if (size == ViewSize.FULL) video.imageUrl ?: video.gridImageUrl else video.gridImageUrl,
+                model = remember(url, size) { url?.let { sizedRequest(context, it, pixelsFor(size), video.gridImageUrl) } },
                 contentDescription = video.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),

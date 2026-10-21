@@ -64,6 +64,25 @@ fun ImageGrid(
     val gridState = rememberSaveable(resetKey, size, saver = LazyGridState.Saver) { LazyGridState() }
     val listState = rememberSaveable(resetKey, size, saver = LazyListState.Saver) { LazyListState() }
 
+    // Load the next images below the screen before they scroll into view.
+    if (size == ViewSize.FULL) {
+        val urls = remember(withImages) { withImages.map { it.imageUrl ?: it.gridImageUrl } }
+        PrefetchAhead(
+            firstHidden = { listState.firstVisibleItemIndex + listState.layoutInfo.visibleItemsInfo.size },
+            urls = urls,
+            px = pixelsFor(size),
+            ahead = 4,
+        )
+    } else {
+        val urls = remember(withImages) { withImages.map { it.gridImageUrl } }
+        PrefetchAhead(
+            firstHidden = { gridState.firstVisibleItemIndex + gridState.layoutInfo.visibleItemsInfo.size },
+            urls = urls,
+            px = pixelsFor(size),
+            ahead = 4 * size.imageColumns,
+        )
+    }
+
     Box(modifier.fillMaxSize()) {
         when {
             // Full screen: one whole picture per screen, with its caption.
@@ -110,9 +129,9 @@ fun ImageGrid(
 private fun ImageTile(article: Article, size: ViewSize, onClick: () -> Unit) {
     val context = LocalContext.current
     val url = article.gridImageUrl ?: return
-    // The smallest size uses the same request as the prefetch, so a warmed image is a
-    // memory-cache hit; larger tiles decode a bigger version (from the disk cache when warmed).
-    val request = remember(url, size) { thumbnailRequest(context, url, THUMBNAIL_PX * 5 / size.imageColumns) }
+    // Same request as the prefetch at the smallest size (a memory-cache hit); larger tiles show
+    // that small version at once and sharpen when the bigger one is decoded.
+    val request = remember(url, size) { sizedRequest(context, url, pixelsFor(size)) }
     Box(
         Modifier
             .fillMaxWidth()
@@ -151,6 +170,8 @@ private fun ImageTile(article: Article, size: ViewSize, onClick: () -> Unit) {
 @Composable
 private fun FullImage(article: Article, modifier: Modifier, onClick: () -> Unit) {
     val url = article.imageUrl ?: article.gridImageUrl ?: return
+    val context = LocalContext.current
+    val request = remember(url) { sizedRequest(context, url, pixelsFor(ViewSize.FULL), article.gridImageUrl) }
     Box(
         modifier
             .fillMaxWidth()
@@ -159,7 +180,7 @@ private fun FullImage(article: Article, modifier: Modifier, onClick: () -> Unit)
             .clickable(onClick = onClick),
     ) {
         AsyncImage(
-            model = url,
+            model = request,
             contentDescription = article.title,
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize(),

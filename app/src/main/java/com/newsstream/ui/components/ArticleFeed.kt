@@ -11,7 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
+import com.newsstream.ui.images.PrefetchAhead
+import com.newsstream.ui.images.pixelsFor
+import com.newsstream.ui.images.sizedRequest
 import com.newsstream.ui.ViewSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -91,6 +95,16 @@ fun ArticleFeed(
         if (nearEnd && shownCount < articles.size) shownCount += PAGE_SIZE
     }
 
+    // Load the images of the stories just below the screen before they scroll into view.
+    if (size != ViewSize.FIFTH) {
+        val imageUrls = remember(shown, size) { shown.map { cardImageUrl(it, size) } }
+        PrefetchAhead(
+            firstHidden = { listState.firstVisibleItemIndex + listState.layoutInfo.visibleItemsInfo.size },
+            urls = imageUrls,
+            px = pixelsFor(size),
+        )
+    }
+
     Box(modifier.fillMaxSize()) {
         when {
             articles.isNotEmpty() -> LazyColumn(
@@ -166,6 +180,12 @@ private fun EmptyState(message: String, actionLabel: String?, onRefresh: () -> U
     }
 }
 
+/** The image a story card shows at [size]: the full image for big cards, the thumbnail otherwise. */
+private fun cardImageUrl(article: Article, size: ViewSize): String? = when (size) {
+    ViewSize.FULL, ViewSize.HALF -> article.imageUrl ?: article.gridImageUrl
+    else -> article.gridImageUrl
+}
+
 /** A story card in the chosen [size]: from a full-screen story to a compact two-line row. */
 @Composable
 fun ArticleCard(
@@ -189,8 +209,9 @@ fun ArticleCard(
         ViewSize.FULL, ViewSize.HALF -> Column(base) {
             val image = article.imageUrl ?: article.gridImageUrl
             if (image != null) {
+                val context = LocalContext.current
                 AsyncImage(
-                    model = image,
+                    model = remember(image, size) { sizedRequest(context, image, pixelsFor(size), article.gridImageUrl) },
                     contentDescription = article.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxWidth().weight(1f),
@@ -225,8 +246,9 @@ fun ArticleCard(
         }
         ViewSize.THIRD -> Row(base.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             article.gridImageUrl?.let { url ->
+                val context = LocalContext.current
                 AsyncImage(
-                    model = url,
+                    model = remember(url) { sizedRequest(context, url, pixelsFor(ViewSize.THIRD)) },
                     contentDescription = article.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxHeight().aspectRatio(1f).clip(RoundedCornerShape(8.dp)),

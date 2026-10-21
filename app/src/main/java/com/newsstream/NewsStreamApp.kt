@@ -21,6 +21,8 @@ class NewsStreamApp : Application(), ImageLoaderFactory {
                 .build()
         }
         .respectCacheHeaders(false)
+        // Half the memory per opaque photo, so more fit in the cache and decode faster.
+        .allowRgb565(true)
         .crossfade(120)
         .build()
 }

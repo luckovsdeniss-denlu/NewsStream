@@ -44,7 +44,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Image as PainterImage
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.SubcomposeAsyncImage
+import com.newsstream.ui.ViewSize
+import com.newsstream.ui.images.pixelsFor
+import com.newsstream.ui.images.sizedRequest
 import com.newsstream.data.Article
 import com.newsstream.data.ContentKind
 import com.newsstream.data.source.PageImageFinder
@@ -144,6 +150,7 @@ private fun ArticleImage(article: Article) {
     var searching by rememberSaveable(article.id) { mutableStateOf(false) }
     var notFound by rememberSaveable(article.id) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     OutlinedButton(
         onClick = {
@@ -183,13 +190,19 @@ private fun ArticleImage(article: Article) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         else -> SubcomposeAsyncImage(
-            model = url,
+            // Shows the small cached version at once (if any) and sharpens when the full one loads.
+            model = remember(url) { sizedRequest(context, url, pixelsFor(ViewSize.FULL), article.gridImageUrl) },
             contentDescription = article.title,
             contentScale = ContentScale.FillWidth,
             modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp).clip(RoundedCornerShape(14.dp)),
-            loading = {
-                Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(Modifier.size(28.dp))
+            loading = { loading ->
+                val placeholder = loading.painter
+                if (placeholder != null) {
+                    PainterImage(placeholder, contentDescription = null, contentScale = ContentScale.FillWidth)
+                } else {
+                    Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(Modifier.size(28.dp))
+                    }
                 }
             },
             error = {
