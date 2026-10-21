@@ -16,6 +16,7 @@ import coil.compose.AsyncImage
 import com.newsstream.ui.images.PrefetchAhead
 import com.newsstream.ui.images.pixelsFor
 import com.newsstream.ui.images.sizedRequest
+import com.newsstream.ui.images.thumbnailRequest
 import com.newsstream.ui.ViewSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -96,14 +97,12 @@ fun ArticleFeed(
     }
 
     // Load the images of the stories just below the screen before they scroll into view.
-    if (size != ViewSize.FIFTH) {
-        val imageUrls = remember(shown, size) { shown.map { cardImageUrl(it, size) } }
-        PrefetchAhead(
-            firstHidden = { listState.firstVisibleItemIndex + listState.layoutInfo.visibleItemsInfo.size },
-            urls = imageUrls,
-            px = pixelsFor(size),
-        )
-    }
+    val imageUrls = remember(shown, size) { shown.map { cardImageUrl(it, size) } }
+    PrefetchAhead(
+        firstHidden = { listState.firstVisibleItemIndex + listState.layoutInfo.visibleItemsInfo.size },
+        urls = imageUrls,
+        px = pixelsFor(size),
+    )
 
     Box(modifier.fillMaxSize()) {
         when {
@@ -274,18 +273,39 @@ fun ArticleCard(
                 }
             }
         }
-        ViewSize.FIFTH -> Column(
-            base.padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+        // Compact: a small square thumbnail (the prefetched 240px version, so it shows at once)
+        // beside the source line and headline.
+        ViewSize.FIFTH -> Row(
+            base.padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            header()
-            Text(
-                article.title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (social && article.summary.isEmpty()) FontWeight.Normal else FontWeight.SemiBold,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
+            article.gridImageUrl?.let { url ->
+                val context = LocalContext.current
+                AsyncImage(
+                    model = remember(url) { thumbnailRequest(context, url) },
+                    contentDescription = article.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                )
+            }
+            Column(
+                Modifier.weight(1f).padding(start = if (article.gridImageUrl == null) 6.dp else 0.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+            ) {
+                header()
+                Text(
+                    article.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (social && article.summary.isEmpty()) FontWeight.Normal else FontWeight.SemiBold,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
