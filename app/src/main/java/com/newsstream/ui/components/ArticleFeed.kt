@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -16,7 +15,6 @@ import coil.compose.AsyncImage
 import com.newsstream.ui.images.PrefetchAhead
 import com.newsstream.ui.images.pixelsFor
 import com.newsstream.ui.images.sizedRequest
-import com.newsstream.ui.images.thumbnailRequest
 import com.newsstream.ui.ViewSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -97,12 +95,15 @@ fun ArticleFeed(
     }
 
     // Load the images of the stories just below the screen before they scroll into view.
-    val imageUrls = remember(shown, size) { shown.map { cardImageUrl(it, size) } }
-    PrefetchAhead(
-        firstHidden = { listState.firstVisibleItemIndex + listState.layoutInfo.visibleItemsInfo.size },
-        urls = imageUrls,
-        px = pixelsFor(size),
-    )
+    // Only full-size cards show pictures, so only they load images ahead.
+    if (size == ViewSize.FULL) {
+        val imageUrls = remember(shown) { shown.map { it.imageUrl ?: it.gridImageUrl } }
+        PrefetchAhead(
+            firstHidden = { listState.firstVisibleItemIndex + listState.layoutInfo.visibleItemsInfo.size },
+            urls = imageUrls,
+            px = pixelsFor(size),
+        )
+    }
 
     Box(modifier.fillMaxSize()) {
         when {
@@ -179,12 +180,6 @@ private fun EmptyState(message: String, actionLabel: String?, onRefresh: () -> U
     }
 }
 
-/** The image a story card shows at [size]: the full image for big cards, the thumbnail otherwise. */
-private fun cardImageUrl(article: Article, size: ViewSize): String? = when (size) {
-    ViewSize.FULL, ViewSize.HALF -> article.imageUrl ?: article.gridImageUrl
-    else -> article.gridImageUrl
-}
-
 /** A story card in the chosen [size]: from a full-screen story to a compact two-line row. */
 @Composable
 fun ArticleCard(
@@ -207,7 +202,8 @@ fun ArticleCard(
     when (size) {
         ViewSize.FULL, ViewSize.HALF -> Column(base) {
             val full = size == ViewSize.FULL
-            val image = article.imageUrl ?: article.gridImageUrl
+            // Pictures appear on news cards only at the full-screen size.
+            val image = if (full) article.imageUrl ?: article.gridImageUrl else null
             if (image != null) {
                 val context = LocalContext.current
                 AsyncImage(
@@ -252,16 +248,7 @@ fun ArticleCard(
                 if (full) article.engagement?.let { EngagementRow(it) }
             }
         }
-        ViewSize.THIRD -> Row(base.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            article.gridImageUrl?.let { url ->
-                val context = LocalContext.current
-                AsyncImage(
-                    model = remember(url) { sizedRequest(context, url, pixelsFor(ViewSize.THIRD)) },
-                    contentDescription = article.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxHeight().aspectRatio(1f).clip(RoundedCornerShape(8.dp)),
-                )
-            }
+        ViewSize.THIRD -> Row(base.padding(10.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 header()
                 Text(
@@ -282,28 +269,14 @@ fun ArticleCard(
                 }
             }
         }
-        // Compact: a small square thumbnail (the prefetched 240px version, so it shows at once)
-        // beside the source line and headline.
+        // Compact: source line and headline.
         ViewSize.FIFTH -> Row(
             base.padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            article.gridImageUrl?.let { url ->
-                val context = LocalContext.current
-                AsyncImage(
-                    model = remember(url) { thumbnailRequest(context, url) },
-                    contentDescription = article.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                )
-            }
             Column(
-                Modifier.weight(1f).padding(start = if (article.gridImageUrl == null) 6.dp else 0.dp),
+                Modifier.weight(1f).padding(start = 6.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
             ) {
                 header()
