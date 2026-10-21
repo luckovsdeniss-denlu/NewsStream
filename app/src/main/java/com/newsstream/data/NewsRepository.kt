@@ -153,6 +153,15 @@ class NewsRepository(cacheDir: File) {
         RssNewsSource("The Athletic", "https://www.nytimes.com/athletic/rss/news/", Topic.SPORTS),
         RssNewsSource("BBC Football", "https://feeds.bbci.co.uk/sport/football/rss.xml", Topic.SPORTS),
         RssNewsSource("Sky Sports Football", "https://www.skysports.com/rss/11095", Topic.SPORTS),
+        // Curiosity: ideas, science writing, art and culture
+        RssNewsSource("Colossal", "https://www.thisiscolossal.com/feed/", Topic.CULTURE),
+        RssNewsSource("kottke.org", "https://feeds.kottke.org/main", Topic.GENERAL),
+        RssNewsSource("Knowable Magazine", "https://knowablemagazine.org/rss", Topic.SCIENCE),
+        RssNewsSource("Open Culture", "https://www.openculture.com/rss", Topic.CULTURE),
+        RssNewsSource("Rest of World", "https://restofworld.org/feed/latest", Topic.TECH),
+        RssNewsSource("Noema", "https://www.noemamag.com/feed/", Topic.GENERAL),
+        RssNewsSource("Nautilus", "https://nautil.us/feed/", Topic.SCIENCE),
+        RssNewsSource("Big Think", "https://bigthink.com/feed/", Topic.SCIENCE),
         // Russian-language news
         RssNewsSource("BBC Русская служба", "https://feeds.bbci.co.uk/russian/rss.xml", language = "ru"),
         RssNewsSource("DW на русском", "https://rss.dw.com/rdf/rss-ru-all", language = "ru"),
