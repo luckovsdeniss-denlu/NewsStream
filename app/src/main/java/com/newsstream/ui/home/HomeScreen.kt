@@ -77,6 +77,7 @@ fun HomeScreen(
     sourceActions: SourceActions,
     onToggleSave: (Article) -> Unit,
     onViewSizeChange: (ViewSize) -> Unit,
+    onRefreshVideos: () -> Unit,
 ) {
     var mode by rememberSaveable { mutableStateOf(Mode.NEWS) }
     var showSources by rememberSaveable { mutableStateOf(false) }
@@ -141,7 +142,11 @@ fun HomeScreen(
                                 },
                             )
                         }
-                        UpdateButton(isLoading = state.isLoading, onClick = onRefresh)
+                        // In the YouTube tab, refresh reloads only the channels; elsewhere only news.
+                        UpdateButton(
+                            isLoading = state.isLoading,
+                            onClick = if (mode == Mode.YOUTUBE) onRefreshVideos else onRefresh,
+                        )
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 )
@@ -160,7 +165,7 @@ fun HomeScreen(
                     YouTubeFeed(
                         state = state,
                         size = state.viewSize,
-                        onLoad = onRefresh,
+                        onLoad = onRefreshVideos,
                         onChooseChannels = chooseSources,
                     )
                 } else if (mode == Mode.SAVED) {

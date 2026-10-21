@@ -123,7 +123,12 @@ fun YouTubeFeed(
                     items(videos, key = { it.id }) { video -> VideoTile(video, size) }
                 }
                 state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                state.notLoadedYet -> EmptyMessage("No videos loaded yet.", "Load news", onLoad, Modifier.align(Alignment.Center))
+                state.videosNotLoadedYet -> EmptyMessage(
+                    "No videos loaded yet.",
+                    "Load videos",
+                    onLoad,
+                    Modifier.align(Alignment.Center),
+                )
                 else -> EmptyMessage("No videos in this group yet.", null, onLoad, Modifier.align(Alignment.Center))
             }
         }

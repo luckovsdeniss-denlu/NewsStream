@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.newsstream.data.Article
+import com.newsstream.data.ContentKind
 import com.newsstream.data.NewsRepository
 import com.newsstream.data.SourceInfo
 import com.newsstream.data.SavedArticles
@@ -41,8 +42,15 @@ data class NewsUiState(
     /** The user hasn't selected any source yet (the starting state). */
     val noSourcesSelected: Boolean get() = sources.isNotEmpty() && sources.all { it.name in hiddenSources }
 
+    /** No videos have been fetched yet: they load only when asked for in the YouTube tab. */
+    val videosNotLoadedYet: Boolean
+        get() = !isLoading && allArticles.none { it.kind == ContentKind.VIDEO } &&
+            sources.none { it.kind == ContentKind.VIDEO && it.name in allFailedSources }
+
     /** Nothing has been fetched yet: the app doesn't load news until the user asks. */
-    val notLoadedYet: Boolean get() = !isLoading && allArticles.isEmpty() && allFailedSources.isEmpty()
+    val notLoadedYet: Boolean
+        get() = !isLoading && allArticles.none { it.kind != ContentKind.VIDEO } &&
+            sources.none { it.kind != ContentKind.VIDEO && it.name in allFailedSources }
 
     /** Articles from the sources the user has selected. */
     val articles: List<Article> by lazy { allArticles.filter { it.source !in hiddenSources } }
@@ -58,6 +66,8 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     private val articlesBySource = mutableMapOf<String, List<Article>>()
     private val failed = mutableSetOf<String>()
     private val inFlight = mutableSetOf<String>()
+    private val videoSourceNames = repository.sourceInfo.filter { it.kind == ContentKind.VIDEO }.map { it.name }.toSet()
+    private var videosRequested = false
     private var roundTotal = 0
 
     private val _state = MutableStateFlow(
@@ -76,7 +86,13 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
      * Fetches every selected source. Nothing is fetched at launch; this runs when the user taps
      * Load news or refresh. Switched-off sources are not downloaded.
      */
-    fun refresh() = load(visibleSourceNames())
+    fun refresh() = load(visibleSourceNames().filter { it !in videoSourceNames })
+
+    /** Fetches the selected YouTube channels. Videos load only from the YouTube tab, on request. */
+    fun refreshVideos() {
+        videosRequested = true
+        load(visibleSourceNames().filter { it in videoSourceNames })
+    }
 
     /** Saves the story, or removes it if it is already saved. */
     fun toggleSaved(article: Article) {
@@ -124,8 +140,12 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     private fun visibleSourceNames() =
         _state.value.sources.map { it.name }.filter { it !in _state.value.hiddenSources }
 
-    /** Fetches sources switched on for the first time (e.g. hidden since launch). */
-    private fun loadIfMissing(names: List<String>) = load(names.filter { it !in articlesBySource })
+    /**
+     * Fetches sources switched on for the first time (e.g. hidden since launch). YouTube channels
+     * are skipped until the user has loaded videos in the YouTube tab.
+     */
+    private fun loadIfMissing(names: List<String>) =
+        load(names.filter { it !in articlesBySource && (videosRequested || it !in videoSourceNames) })
 
     private fun load(names: List<String>) {
         val toFetch = names.filter { inFlight.add(it) }
