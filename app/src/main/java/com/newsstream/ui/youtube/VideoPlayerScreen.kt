@@ -5,9 +5,12 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.graphics.Bitmap
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -34,12 +37,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +59,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
@@ -68,6 +74,7 @@ import com.newsstream.ui.YouTubeColor
 import com.newsstream.ui.images.thumbnailRequest
 import com.newsstream.ui.theme.AppBackground
 import com.newsstream.ui.timeAgo
+import kotlinx.coroutines.delay
 
 /**
  * Plays a YouTube video inside the app with YouTube's embedded player, then shows its title,
@@ -182,16 +189,22 @@ fun VideoPlayerScreen(
 private class FullscreenView(val view: View, val exit: () -> Unit)
 
 /**
- * YouTube's IFrame player in a WebView. The page is given an https origin, which YouTube requires
- * to identify the embedding app; playback pauses when the app goes to the background.
+ * YouTube's IFrame Player API in a WebView, set up the way the widely used android-youtube-player
+ * library does it: the page is loaded with an https origin naming the app ("https://" + package),
+ * which YouTube requires from embedding apps, and the player is created with YT.Player so its
+ * ready and error events reach the app. Errors are shown over the player instead of a black box;
+ * playback pauses when the app goes to the background.
  */
-@SuppressLint("SetJavaScriptEnabled")
+@SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
 @Composable
 private fun YouTubePlayer(videoId: String, onFullscreen: (FullscreenView?) -> Unit) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val uriHandler = LocalUriHandler.current
     var webView by remember { mutableStateOf<WebView?>(null) }
+    var status by remember { mutableStateOf(PlayerStatus.LOADING) }
+    var errorCode by remember { mutableStateOf(0) }
 
     DisposableEffect(lifecycle, webView) {
         val view = webView
@@ -205,54 +218,130 @@ private fun YouTubePlayer(videoId: String, onFullscreen: (FullscreenView?) -> Un
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
+    // If the player never reports ready, say so rather than leaving a black box.
+    LaunchedEffect(videoId) {
+        delay(15_000)
+        if (status == PlayerStatus.LOADING) status = PlayerStatus.TIMED_OUT
+    }
 
-    AndroidView(
-        factory = { ctx ->
-            WebView(ctx).apply {
-                setBackgroundColor(android.graphics.Color.BLACK)
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                settings.mediaPlaybackRequiresUserGesture = false
-                webChromeClient = object : WebChromeClient() {
-                    private var callback: CustomViewCallback? = null
+    Box(Modifier.fillMaxSize()) {
+        AndroidView(
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    setBackgroundColor(android.graphics.Color.BLACK)
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.mediaPlaybackRequiresUserGesture = false
+                    settings.cacheMode = WebSettings.LOAD_DEFAULT
+                    // Called by the page's player events (on a background thread).
+                    addJavascriptInterface(
+                        object {
+                            @JavascriptInterface
+                            fun onReady() {
+                                post { status = PlayerStatus.READY }
+                            }
 
-                    override fun onShowCustomView(view: View, callback: CustomViewCallback) {
-                        this.callback = callback
-                        activity?.enterFullscreen()
-                        onFullscreen(FullscreenView(view) { onHideCustomView() })
+                            @JavascriptInterface
+                            fun onError(code: Int) {
+                                post {
+                                    errorCode = code
+                                    status = PlayerStatus.ERROR
+                                }
+                            }
+                        },
+                        "NewsStreamPlayer",
+                    )
+                    webChromeClient = object : WebChromeClient() {
+                        private var callback: CustomViewCallback? = null
+
+                        // Without a poster WebView draws a grey placeholder over the player.
+                        override fun getDefaultVideoPoster(): Bitmap =
+                            Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+
+                        override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                            this.callback = callback
+                            activity?.enterFullscreen()
+                            onFullscreen(FullscreenView(view) { onHideCustomView() })
+                        }
+
+                        override fun onHideCustomView() {
+                            onFullscreen(null)
+                            activity?.exitFullscreen()
+                            callback?.onCustomViewHidden()
+                            callback = null
+                        }
                     }
-
-                    override fun onHideCustomView() {
-                        onFullscreen(null)
-                        activity?.exitFullscreen()
-                        callback?.onCustomViewHidden()
-                        callback = null
-                    }
+                    val origin = "https://" + ctx.packageName
+                    loadDataWithBaseURL(origin, playerHtml(videoId, origin), "text/html", "utf-8", null)
+                    webView = this
                 }
-                loadDataWithBaseURL(PLAYER_ORIGIN, playerHtml(videoId), "text/html", "utf-8", null)
-                webView = this
+            },
+            onRelease = { view ->
+                onFullscreen(null)
+                activity?.exitFullscreen()
+                view.destroy()
+            },
+            modifier = Modifier.fillMaxSize(),
+        )
+        if (status == PlayerStatus.ERROR || status == PlayerStatus.TIMED_OUT) {
+            Column(
+                Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    if (status == PlayerStatus.TIMED_OUT) {
+                        "The player didn't load. Check the connection or open the video in YouTube."
+                    } else {
+                        playerErrorMessage(errorCode)
+                    },
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                )
+                OutlinedButton(onClick = { uriHandler.openUri("https://www.youtube.com/watch?v=$videoId") }) {
+                    Text("OPEN IN YOUTUBE", color = YouTubeColor)
+                }
             }
-        },
-        onRelease = { view ->
-            onFullscreen(null)
-            activity?.exitFullscreen()
-            view.destroy()
-        },
-        modifier = Modifier.fillMaxSize(),
-    )
+        }
+    }
 }
 
-private const val PLAYER_ORIGIN = "https://com.newsstream"
+private enum class PlayerStatus { LOADING, READY, ERROR, TIMED_OUT }
 
-private fun playerHtml(videoId: String) = """
+/** The IFrame API's error codes, in words. */
+private fun playerErrorMessage(code: Int) = when (code) {
+    2 -> "This video link isn't valid (error 2)."
+    5 -> "This video can't be played in the app's player (error 5)."
+    100 -> "This video was removed or made private (error 100)."
+    101, 150 -> "The channel doesn't allow this video to play outside YouTube (error $code)."
+    152, 153 -> "YouTube refused to play this video in the app (error $code)."
+    else -> "YouTube couldn't play this video (error $code)."
+}
+
+/** A page with YouTube's IFrame Player API filling the screen, reporting ready and errors to the app. */
+private fun playerHtml(videoId: String, origin: String) = """
     <!DOCTYPE html>
     <html><head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>html,body{margin:0;padding:0;height:100%;background:#000;overflow:hidden}iframe{border:0;width:100%;height:100%}</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;position:fixed}</style>
+    <script defer src="https://www.youtube.com/iframe_api"></script>
     </head><body>
-    <iframe src="https://www.youtube-nocookie.com/embed/$videoId?autoplay=1&playsinline=1&rel=0&origin=$PLAYER_ORIGIN"
-        referrerpolicy="strict-origin-when-cross-origin"
-        allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+    <div id="player"></div>
+    <script>
+      function onYouTubeIframeAPIReady() {
+        new YT.Player('player', {
+          width: '100%',
+          height: '100%',
+          videoId: '$videoId',
+          playerVars: { autoplay: 1, playsinline: 1, rel: 0, controls: 1, fs: 1, enablejsapi: 1, origin: '$origin' },
+          events: {
+            onReady: function(e) { NewsStreamPlayer.onReady(); e.target.playVideo(); },
+            onError: function(e) { NewsStreamPlayer.onError(e.data); }
+          }
+        });
+      }
+    </script>
     </body></html>
 """.trimIndent()
 
