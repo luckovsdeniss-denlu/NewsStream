@@ -1,6 +1,7 @@
 package com.newsstream.ui.youtube
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +22,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.SmartDisplay
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
@@ -52,23 +57,25 @@ import com.newsstream.data.displaySourceName
 import com.newsstream.ui.NewsUiState
 import com.newsstream.ui.ViewSize
 import com.newsstream.ui.YouTubeColor
+import com.newsstream.ui.color
+import com.newsstream.ui.icon
 import com.newsstream.ui.timeAgo
 
-/** The group a channel is listed under in the YouTube tab. */
-private fun channelGroup(source: SourceInfo): String = when {
-    source.language == "ru" -> "Русский"
-    else -> when (source.category) {
-        Topic.WORLD -> "World"
+/** A channel group in the YouTube tab, with its own colour and icon. */
+private data class ChannelGroup(val label: String, val color: Color, val icon: ImageVector)
+
+private val RussianGroup = ChannelGroup("Русский", Color(0xFFFF8A65), Icons.Filled.Translate)
+
+/** The group a channel is listed under: Russian-language channels together, others by topic. */
+private fun channelGroup(source: SourceInfo): ChannelGroup {
+    if (source.language == "ru") return RussianGroup
+    val topic = source.category
+    val label = when (topic) {
         Topic.POLITICS -> "US news"
-        Topic.BUSINESS -> "Business"
-        Topic.TECH -> "Technology"
-        Topic.SCIENCE -> "Science"
-        Topic.HEALTH -> "Health"
-        Topic.SPORTS -> "Sports"
-        Topic.CLIMATE -> "Climate"
-        Topic.CULTURE -> "Culture"
         Topic.GENERAL -> "Explainers"
+        else -> topic.label
     }
+    return ChannelGroup(label, topic.color, topic.icon)
 }
 
 /**
@@ -86,6 +93,7 @@ fun YouTubeFeed(
 ) {
     val channels = remember(state.sources) { state.sources.filter { it.kind == ContentKind.VIDEO } }
     val groupOf = remember(channels) { channels.associate { it.name to channelGroup(it) } }
+    // Groups are kept by label so the selection survives rotation.
     // Groups in a fixed order, only those with a selected channel.
     val selectedChannels = channels.filter { it.name !in state.hiddenSources }
     val groups = remember(selectedChannels) {
@@ -93,7 +101,7 @@ fun YouTubeFeed(
     }
     var group by rememberSaveable { mutableStateOf<String?>(null) }
     val videos = remember(state.articles, group) {
-        state.articles.filter { it.kind == ContentKind.VIDEO && (group == null || groupOf[it.source] == group) }
+        state.articles.filter { it.kind == ContentKind.VIDEO && (group == null || groupOf[it.source]?.label == group) }
     }
     val gridState = rememberSaveable(group, size, saver = LazyGridState.Saver) { LazyGridState() }
 
@@ -104,8 +112,8 @@ fun YouTubeFeed(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                GroupChip("All", selected = group == null, onClick = { group = null })
-                groups.forEach { name -> GroupChip(name, selected = group == name, onClick = { group = name }) }
+                GroupChip(ChannelGroup("All", YouTubeColor, Icons.Filled.SmartDisplay), group == null) { group = null }
+                groups.forEach { g -> GroupChip(g, group == g.label) { group = g.label } }
             }
         }
         Box(Modifier.fillMaxSize()) {
@@ -123,7 +131,7 @@ fun YouTubeFeed(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(videos, key = { it.id }) { video -> VideoTile(video, size) }
+                    items(videos, key = { it.id }) { video -> VideoTile(video, size, groupOf[video.source]) }
                 }
                 state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 state.videosNotLoadedYet -> EmptyMessage(
@@ -138,23 +146,32 @@ fun YouTubeFeed(
     }
 }
 
+/** A group filter chip in the group's colour: tinted when selected, outlined when not. */
 @Composable
-private fun GroupChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Text(
-        label,
-        style = MaterialTheme.typography.labelLarge,
-        color = if (selected) YouTubeColor else MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (selected) YouTubeColor.copy(alpha = 0.2f) else Color.Transparent)
+private fun GroupChip(group: ChannelGroup, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(8.dp)
+    Row(
+        Modifier
+            .clip(shape)
+            .background(if (selected) group.color.copy(alpha = 0.22f) else Color.Transparent)
+            .border(1.dp, group.color.copy(alpha = if (selected) 0.7f else 0.35f), shape)
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-    )
+            .padding(horizontal = 9.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Icon(group.icon, contentDescription = null, tint = group.color, modifier = Modifier.size(14.dp))
+        Text(
+            group.label,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) group.color else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 /** A 16:9 thumbnail with a play badge, then the title and channel (text hidden at the smallest size). */
 @Composable
-private fun VideoTile(video: Article, size: ViewSize) {
+private fun VideoTile(video: Article, size: ViewSize, group: ChannelGroup?) {
     val uriHandler = LocalUriHandler.current
     Column(
         Modifier
@@ -178,6 +195,24 @@ private fun VideoTile(video: Article, size: ViewSize) {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
+            // Category badge in the group's colour (icon only at the smallest size).
+            if (group != null) {
+                Row(
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(5.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color.Black.copy(alpha = 0.6f))
+                        .padding(horizontal = 5.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    Icon(group.icon, contentDescription = group.label, tint = group.color, modifier = Modifier.size(12.dp))
+                    if (size != ViewSize.FIFTH) {
+                        Text(group.label, style = MaterialTheme.typography.labelSmall, color = group.color)
+                    }
+                }
+            }
             Icon(
                 Icons.Filled.PlayCircle,
                 contentDescription = "Play",
@@ -197,7 +232,7 @@ private fun VideoTile(video: Article, size: ViewSize) {
             Text(
                 listOfNotNull(displaySourceName(video.source), video.timeAgo()).joinToString(" · "),
                 style = MaterialTheme.typography.labelSmall,
-                color = YouTubeColor,
+                color = group?.color ?: YouTubeColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
