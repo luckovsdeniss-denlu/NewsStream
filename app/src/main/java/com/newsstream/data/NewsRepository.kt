@@ -179,6 +179,11 @@ class NewsRepository(cacheDir: File) {
         RssNewsSource("Фонтанка", "https://www.fontanka.ru/fontanka.rss", language = "ru"),
         RssNewsSource("Хабр", "https://habr.com/ru/rss/articles/?fl=ru", Topic.TECH, language = "ru"),
         GoogleNewsSource("Google Новости", "hl=ru&gl=RU&ceid=RU:ru", language = "ru"),
+        RssNewsSource("Naked Science", "https://naked-science.ru/feed", Topic.SCIENCE, language = "ru"),
+        RssNewsSource("Элементы", "https://elementy.ru/rss/news", Topic.SCIENCE, language = "ru"),
+        RssNewsSource("3DNews", "https://3dnews.ru/news/rss", Topic.TECH, language = "ru"),
+        RssNewsSource("Т—Ж", "https://t-j.ru/feed/", Topic.BUSINESS, language = "ru"),
+        RssNewsSource("Нож", "https://knife.media/feed/", Topic.CULTURE, language = "ru"),
         // In-depth: investigations, explainers, data, science and fact-checks
         RssNewsSource("ProPublica", "https://www.propublica.org/feeds/propublica/main", Topic.POLITICS),
         RssNewsSource("Bellingcat", "https://www.bellingcat.com/feed/"),
