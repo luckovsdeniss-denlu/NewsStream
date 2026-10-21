@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.RssFeed
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -79,6 +80,7 @@ fun HomeScreen(
     onViewSizeChange: (ViewSize) -> Unit,
     onRefreshVideos: () -> Unit,
     onTurnOnChannels: (List<String>) -> Unit,
+    onOpenInsights: () -> Unit,
 ) {
     var mode by rememberSaveable { mutableStateOf(Mode.NEWS) }
     var showSources by rememberSaveable { mutableStateOf(false) }
@@ -130,6 +132,13 @@ fun HomeScreen(
                         }
                     },
                     actions = {
+                        IconButton(onClick = onOpenInsights) {
+                            Icon(
+                                Icons.Filled.Insights,
+                                contentDescription = "Insights",
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                         SizeButton(state.viewSize, onViewSizeChange)
                         IconButton(onClick = { showSources = true }) {
                             Icon(

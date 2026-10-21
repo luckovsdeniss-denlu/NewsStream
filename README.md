@@ -15,6 +15,12 @@ Sources are fetched at most 10 at a time and each one appears as soon as it arri
 progress). The feed renders 30 compact stories at a time and adds the next 30 as you scroll. Switched-off sources
 are not downloaded.
 
+## Insights
+
+The chart icon in the top bar opens an on-device analysis of everything loaded (videos excluded):
+overview totals, stories per topic and per source, big stories covered by several outlets, trending
+words, a 24-hour publishing timeline, the most-engaged social posts and the language mix.
+
 ## News sources
 Configured in `data/NewsRepository.kt`:
 - **The Guardian** Content API (full article text). Uses the public `test` key by default, which is

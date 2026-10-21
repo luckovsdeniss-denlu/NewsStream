@@ -13,6 +13,7 @@ import com.newsstream.ui.NewsViewModel
 import com.newsstream.ui.article.ArticleScreen
 import com.newsstream.ui.components.SourceActions
 import com.newsstream.ui.home.HomeScreen
+import com.newsstream.ui.insights.InsightsScreen
 import com.newsstream.ui.theme.NewsStreamTheme
 
 class MainActivity : ComponentActivity() {
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
                 val newsViewModel: NewsViewModel = viewModel()
                 val state by newsViewModel.state.collectAsStateWithLifecycle()
                 var openArticleId by rememberSaveable { mutableStateOf<String?>(null) }
+                var showInsights by rememberSaveable { mutableStateOf(false) }
                 // Saved stories open even when they are no longer in the live feed.
                 val openArticle = state.articles.firstOrNull { it.id == openArticleId }
                     ?: state.saved.firstOrNull { it.id == openArticleId }
@@ -33,6 +35,13 @@ class MainActivity : ComponentActivity() {
                         saved = openArticle.id in state.savedIds,
                         onToggleSave = { newsViewModel.toggleSaved(openArticle) },
                         onBack = { openArticleId = null },
+                    )
+                } else if (showInsights) {
+                    InsightsScreen(
+                        state = state,
+                        onBack = { showInsights = false },
+                        onLoad = newsViewModel::refresh,
+                        onArticleClick = { openArticleId = it.id },
                     )
                 } else {
                     HomeScreen(
@@ -50,6 +59,7 @@ class MainActivity : ComponentActivity() {
                         onViewSizeChange = newsViewModel::setViewSize,
                         onRefreshVideos = newsViewModel::refreshVideos,
                         onTurnOnChannels = newsViewModel::turnOnChannels,
+                        onOpenInsights = { showInsights = true },
                     )
                 }
             }
