@@ -59,6 +59,11 @@ Configured in `data/NewsRepository.kt`:
   - Mastodon trending posts and trending news links (mastodon.social)
   - Bluesky "Discover" feed via the public AppView API
 
+- Telegram public channels via their web preview (t.me/s/…, no key): Meduza, Дождь, Медиазона, Настоящее время,
+  BBC Русская служба, РБК, Коммерсантъ, Интерфакс, ТАСС, РИА Новости, NEXTA.
+- VK public pages via the official API (needs a free service token as the `VK_SERVICE_TOKEN` secret): РИА Новости,
+  РБК, Лента.ру, Коммерсантъ, ТАСС.
+
 X/Twitter, Instagram and Facebook are not included: their APIs require paid or approved access.
 
 Add a source by implementing `NewsSource` (or adding another `RssNewsSource` for any RSS 2.0, RSS 1.0 or Atom feed) and listing it in `NewsRepository`.

@@ -19,6 +19,11 @@ val guardianApiKey = (System.getenv("GUARDIAN_API_KEY") ?: findProperty("GUARDIA
 val redditClientId = System.getenv("REDDIT_CLIENT_ID")?.takeIf { it.isNotBlank() }
     ?: findProperty("REDDIT_CLIENT_ID") as String? ?: ""
 
+// VK service token (an app's "service key" from https://dev.vk.com). Optional: without it the VK
+// sources are left out.
+val vkServiceToken = System.getenv("VK_SERVICE_TOKEN")?.takeIf { it.isNotBlank() }
+    ?: findProperty("VK_SERVICE_TOKEN") as String? ?: ""
+
 // GNews.io API key (https://gnews.io). Optional: without it the GNews sources are left out.
 val gnewsApiKey = System.getenv("GNEWS_API_KEY")?.takeIf { it.isNotBlank() }
     ?: findProperty("GNEWS_API_KEY") as String? ?: ""
@@ -35,6 +40,7 @@ android {
         buildConfigField("String", "GUARDIAN_API_KEY", "\"$guardianApiKey\"")
         buildConfigField("String", "REDDIT_CLIENT_ID", "\"$redditClientId\"")
         buildConfigField("String", "GNEWS_API_KEY", "\"$gnewsApiKey\"")
+        buildConfigField("String", "VK_SERVICE_TOKEN", "\"$vkServiceToken\"")
     }
     buildFeatures {
         compose = true

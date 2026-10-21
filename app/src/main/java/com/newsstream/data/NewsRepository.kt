@@ -14,6 +14,8 @@ import com.newsstream.data.source.NewsSource
 import com.newsstream.data.source.RedditSource
 import com.newsstream.data.source.ResponseCache
 import com.newsstream.data.source.RssNewsSource
+import com.newsstream.data.source.TelegramChannelSource
+import com.newsstream.data.source.VkWallSource
 import com.newsstream.data.source.WikipediaSource
 import com.newsstream.data.source.YouTubeChannelSource
 import kotlinx.coroutines.Dispatchers
@@ -216,6 +218,18 @@ class NewsRepository(cacheDir: File) {
         YouTubeChannelSource("ESPN", "UCiWLfSweyRNmLpgEHekhoAg", Topic.SPORTS),
         YouTubeChannelSource("Дождь", "UCdubelOloxR3wzwJG9x8YqQ", Topic.GENERAL, language = "ru"),
         YouTubeChannelSource("Настоящее время", "UCBG57608Hukev3d0d-gvLhQ", Topic.WORLD, language = "ru"),
+        // Telegram public channels (web preview, no key)
+        TelegramChannelSource("Meduza (Telegram)", "meduzalive"),
+        TelegramChannelSource("Дождь (Telegram)", "tvrain"),
+        TelegramChannelSource("Медиазона (Telegram)", "mediazzzona"),
+        TelegramChannelSource("Настоящее время (Telegram)", "currenttime", Topic.WORLD),
+        TelegramChannelSource("BBC Русская служба (Telegram)", "bbcrussian", Topic.WORLD),
+        TelegramChannelSource("РБК (Telegram)", "rbc_news", Topic.BUSINESS),
+        TelegramChannelSource("Коммерсантъ (Telegram)", "kommersant"),
+        TelegramChannelSource("Интерфакс (Telegram)", "interfaxonline"),
+        TelegramChannelSource("ТАСС (Telegram)", "tass_agency"),
+        TelegramChannelSource("РИА Новости (Telegram)", "rian_ru"),
+        TelegramChannelSource("NEXTA (Telegram)", "nexta_live", Topic.WORLD),
         // Social
         RedditSource("worldnews", Topic.WORLD),
         RedditSource("news"),
@@ -226,7 +240,7 @@ class NewsRepository(cacheDir: File) {
         MastodonTrendingPostsSource(),
         MastodonTrendingLinksSource(),
         BlueskySource(),
-    ) + gnewsSources(ResponseCache(File(cacheDir, "api_responses")))
+    ) + gnewsSources(ResponseCache(File(cacheDir, "api_responses"))) + vkSources()
 
     /** Every configured source, in display order. */
     val sourceInfo: List<SourceInfo> = sources.map { SourceInfo(it.name, it.kind, it.category, it.language) }
@@ -247,6 +261,19 @@ class NewsRepository(cacheDir: File) {
 
     private companion object {
         const val MAX_PARALLEL_REQUESTS = 10
+
+        /** VK public pages, only when a VK_SERVICE_TOKEN was configured at build time. */
+        fun vkSources(): List<NewsSource> {
+            val token = BuildConfig.VK_SERVICE_TOKEN
+            if (token.isBlank()) return emptyList()
+            return listOf(
+                VkWallSource("РИА Новости (VK)", "ria", token),
+                VkWallSource("РБК (VK)", "rbc", token, Topic.BUSINESS),
+                VkWallSource("Лента.ру (VK)", "lentaru", token),
+                VkWallSource("Коммерсантъ (VK)", "kommersant_ru", token),
+                VkWallSource("ТАСС (VK)", "tassagency", token),
+            )
+        }
 
         /** GNews categories, only when a GNEWS_API_KEY was configured at build time. */
         fun gnewsSources(cache: ResponseCache): List<NewsSource> {
