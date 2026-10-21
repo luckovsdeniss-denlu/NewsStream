@@ -14,6 +14,7 @@ import com.newsstream.ui.article.ArticleScreen
 import com.newsstream.ui.components.SourceActions
 import com.newsstream.ui.home.HomeScreen
 import com.newsstream.ui.insights.InsightsScreen
+import com.newsstream.ui.insights.TermScreen
 import com.newsstream.ui.theme.NewsStreamTheme
 
 class MainActivity : ComponentActivity() {
@@ -25,6 +26,8 @@ class MainActivity : ComponentActivity() {
                 val state by newsViewModel.state.collectAsStateWithLifecycle()
                 var openArticleId by rememberSaveable { mutableStateOf<String?>(null) }
                 var showInsights by rememberSaveable { mutableStateOf(false) }
+                // Word or phrase being analysed from Insights.
+                var insightsTerm by rememberSaveable { mutableStateOf<String?>(null) }
                 // Saved stories open even when they are no longer in the live feed.
                 val openArticle = state.articles.firstOrNull { it.id == openArticleId }
                     ?: state.saved.firstOrNull { it.id == openArticleId }
@@ -36,12 +39,21 @@ class MainActivity : ComponentActivity() {
                         onToggleSave = { newsViewModel.toggleSaved(openArticle) },
                         onBack = { openArticleId = null },
                     )
+                } else if (insightsTerm != null) {
+                    TermScreen(
+                        state = state,
+                        term = insightsTerm!!,
+                        onBack = { insightsTerm = null },
+                        onArticleClick = { openArticleId = it.id },
+                        onTermClick = { insightsTerm = it },
+                    )
                 } else if (showInsights) {
                     InsightsScreen(
                         state = state,
                         onBack = { showInsights = false },
                         onLoad = newsViewModel::refresh,
                         onArticleClick = { openArticleId = it.id },
+                        onTermClick = { insightsTerm = it },
                     )
                 } else {
                     HomeScreen(

@@ -20,6 +20,8 @@ are not downloaded.
 The chart icon in the top bar opens an on-device analysis of everything loaded (videos excluded):
 overview totals, stories per topic and per source, big stories covered by several outlets, trending
 words, a 24-hour publishing timeline, the most-engaged social posts and the language mix.
+Tap a trending word or big story to analyse it: which sources cover it (with all their stories),
+who reported it first, its topics, its last 24 hours and related words (tap one to follow it).
 
 ## News sources
 Configured in `data/NewsRepository.kt`:

@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,6 +66,7 @@ fun InsightsScreen(
     onBack: () -> Unit,
     onLoad: () -> Unit,
     onArticleClick: (Article) -> Unit,
+    onTermClick: (String) -> Unit,
 ) {
     BackHandler(onBack = onBack)
     val insights = remember(state.articles, state.sources, state.hiddenSources) {
@@ -119,13 +121,13 @@ fun InsightsScreen(
                     BarList(insights.topSources.map { (name, count) -> Bar(name, count, compactCount(count)) })
                 }
                 if (insights.bigStories.isNotEmpty()) {
-                    Section("Big stories", "Phrases in headlines from 3 or more different sources") {
-                        BarList(insights.bigStories.map { (phrase, sources) -> Bar(phrase, sources, "$sources sources") })
+                    Section("Big stories", "Phrases in headlines from 3 or more different sources · tap to analyse") {
+                        BarList(insights.bigStories.map { (phrase, sources) -> Bar(phrase, sources, "$sources sources", onClick = { onTermClick(phrase) }) })
                     }
                 }
                 if (insights.trendingWords.isNotEmpty()) {
-                    Section("Trending words", "Headline words used by the most different sources") {
-                        BarList(insights.trendingWords.map { (word, sources) -> Bar(word, sources, "$sources sources") })
+                    Section("Trending words", "Headline words used by the most different sources · tap to analyse") {
+                        BarList(insights.trendingWords.map { (word, sources) -> Bar(word, sources, "$sources sources", onClick = { onTermClick(word) }) })
                     }
                 }
                 Section("Last 24 hours", "Stories published per hour") { HourlyColumns(insights.lastDay) }
@@ -146,12 +148,19 @@ fun InsightsScreen(
     }
 }
 
-private class Bar(val label: String, val value: Int, val valueText: String, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null)
+internal class Bar(
+    val label: String,
+    val value: Int,
+    val valueText: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    /** Makes the whole row tappable (shown with a chevron). */
+    val onClick: (() -> Unit)? = null,
+)
 
-private fun percent(part: Int, total: Int) =
+internal fun percent(part: Int, total: Int) =
     if (total == 0) "0%" else String.format(Locale.US, "%.0f%%", part * 100f / total)
 
-private fun languageName(code: String) = when (code) {
+internal fun languageName(code: String) = when (code) {
     "en" -> "English"
     "ru" -> "Русский"
     else -> code
@@ -169,7 +178,7 @@ private fun Overview(insights: Insights) {
 }
 
 @Composable
-private fun StatTile(label: String, value: String, modifier: Modifier) {
+internal fun StatTile(label: String, value: String, modifier: Modifier) {
     Column(
         modifier.panel(MaterialTheme.colorScheme.primary).padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -180,7 +189,7 @@ private fun StatTile(label: String, value: String, modifier: Modifier) {
 }
 
 @Composable
-private fun Section(title: String, subtitle: String, content: @Composable () -> Unit) {
+internal fun Section(title: String, subtitle: String, content: @Composable () -> Unit) {
     Column(
         Modifier.fillMaxWidth().panel(MaterialTheme.colorScheme.primary).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -196,11 +205,20 @@ private fun Section(title: String, subtitle: String, content: @Composable () -> 
  * largest value, and the value written out on the right (so it never relies on bar length alone).
  */
 @Composable
-private fun BarList(bars: List<Bar>) {
+internal fun BarList(bars: List<Bar>) {
     val max = bars.maxOfOrNull { it.value }?.coerceAtLeast(1) ?: 1
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         bars.forEach { bar ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val click = bar.onClick
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(6.dp))
+                    .then(if (click != null) Modifier.clickable(onClick = click) else Modifier)
+                    .padding(vertical = if (click != null) 4.dp else 0.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Row(
                     Modifier.weight(0.4f),
                     verticalAlignment = Alignment.CenterVertically,
@@ -233,6 +251,14 @@ private fun BarList(bars: List<Bar>) {
                     maxLines = 1,
                     modifier = Modifier.weight(0.2f),
                 )
+                if (click != null) {
+                    Icon(
+                        Icons.Filled.ChevronRight,
+                        contentDescription = "Analyse ${bar.label}",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
         }
     }
@@ -240,9 +266,9 @@ private fun BarList(bars: List<Bar>) {
 
 /** 24 hourly columns (oldest left); tap a column to see its count. */
 @Composable
-private fun HourlyColumns(counts: List<Int>) {
+internal fun HourlyColumns(counts: List<Int>) {
     val max = counts.maxOrNull()?.coerceAtLeast(1) ?: 1
-    var selected by remember { mutableStateOf<Int?>(null) }
+    var selected by remember(counts) { mutableStateOf<Int?>(null) }
     val shown = selected
     Text(
         if (shown == null) {

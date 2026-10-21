@@ -26,6 +26,12 @@ data class Insights(
         private const val HOUR = 3_600_000L
         private val WORD = Regex("\\p{L}[\\p{L}'’-]*")
 
+        /** The meaningful words of a headline, lowercased, in order (stopwords and short words dropped). */
+        fun headlineWords(title: String): List<String> =
+            WORD.findAll(title.lowercase()).map { it.value.trim('\'', '’', '-') }
+                .filter { it.length >= 4 && it !in STOPWORDS }
+                .toList()
+
         fun compute(
             articles: List<Article>,
             sources: List<SourceInfo>,
@@ -36,11 +42,7 @@ data class Insights(
             val languageOf = sources.associate { it.name to it.language }
 
             // Words per story (headline only), deduplicated within a headline.
-            val wordsByStory = stories.map { story ->
-                story to WORD.findAll(story.title.lowercase()).map { it.value.trim('\'', '’', '-') }
-                    .filter { it.length >= 4 && it !in STOPWORDS }
-                    .toList()
-            }
+            val wordsByStory = stories.map { story -> story to headlineWords(story.title) }
             // Rank words and phrases by how many different sources use them, so one prolific
             // source can't dominate; ties go to the more frequent term.
             fun rankBySources(terms: Map<String, Pair<MutableSet<String>, Int>>, minSources: Int) =
@@ -64,11 +66,6 @@ data class Insights(
                 }
             }
 
-            val lastDay = IntArray(24)
-            for (story in stories) {
-                val hoursAgo = ((now - story.publishedAt) / HOUR).toInt()
-                if (story.publishedAt > 0 && hoursAgo in 0..23) lastDay[23 - hoursAgo]++
-            }
 
             return Insights(
                 storyCount = stories.size,
@@ -81,13 +78,23 @@ data class Insights(
                     .sortedByDescending { it.second }.take(10),
                 trendingWords = rankBySources(wordSources, minSources = 2).take(15),
                 bigStories = rankBySources(phraseSources, minSources = 3).take(8),
-                lastDay = lastDay.toList(),
+                lastDay = hourlyCounts(stories, now),
                 mostEngaged = stories.filter { it.engagement != null }
                     .sortedByDescending { it.engagement!!.let { e -> (e.likes ?: 0) + (e.comments ?: 0) + (e.shares ?: 0) } }
                     .take(5),
                 languages = stories.groupingBy { languageOf[it.source] ?: "en" }.eachCount().toList()
                     .sortedByDescending { it.second },
             )
+        }
+
+        /** Stories published in each of the last 24 hours, oldest hour first. */
+        internal fun hourlyCounts(stories: List<Article>, now: Long): List<Int> {
+            val counts = IntArray(24)
+            for (story in stories) {
+                val hoursAgo = ((now - story.publishedAt) / HOUR).toInt()
+                if (story.publishedAt > 0 && hoursAgo in 0..23) counts[23 - hoursAgo]++
+            }
+            return counts.toList()
         }
 
         /** Common English and Russian words that say nothing about a story's subject. */
