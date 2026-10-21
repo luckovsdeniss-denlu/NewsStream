@@ -2,10 +2,11 @@ package com.newsstream.ui
 
 import android.text.format.DateUtils
 import com.newsstream.data.Article
+import com.newsstream.data.displaySourceName
 import java.util.Locale
 
 /** Source and author. */
-fun Article.byline(): String = listOfNotNull(source, author).joinToString(" · ")
+fun Article.byline(): String = listOfNotNull(displaySourceName(source), author).joinToString(" · ")
 
 /** How long ago the story was published ("5 min. ago", "3 hours ago"), or null if unknown. */
 fun Article.timeAgo(): String? =

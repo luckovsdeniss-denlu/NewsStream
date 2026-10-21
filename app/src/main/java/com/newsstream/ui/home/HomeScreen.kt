@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
+import com.newsstream.data.ContentKind
 import com.newsstream.data.Topic
 import com.newsstream.ui.NewsUiState
 import com.newsstream.ui.ViewSize
@@ -57,11 +58,13 @@ import com.newsstream.ui.components.SourceActions
 import com.newsstream.ui.components.SourcesSheet
 import com.newsstream.ui.icon
 import com.newsstream.ui.images.ImageGrid
+import com.newsstream.ui.youtube.YouTubeFeed
 import com.newsstream.ui.theme.AppBackground
 
 private enum class Mode(val label: String) {
     NEWS("News"),
     IMAGES("Images"),
+    YOUTUBE("YouTube"),
     SAVED("Saved"),
 }
 
@@ -93,8 +96,10 @@ fun HomeScreen(
         topicNames = if (topic in selectedTopics) "" else topic.name
     }
 
-    val topicCounts = remember(state.articles) { state.articles.groupingBy { it.topic }.eachCount() }
-    val visible = if (selectedTopics.isEmpty()) state.articles else state.articles.filter { it.topic in selectedTopics }
+    // Videos live in the YouTube tab only.
+    val stories = remember(state.articles) { state.articles.filter { it.kind != ContentKind.VIDEO } }
+    val topicCounts = remember(stories) { stories.groupingBy { it.topic }.eachCount() }
+    val visible = if (selectedTopics.isEmpty()) stories else stories.filter { it.topic in selectedTopics }
 
     AppBackground {
         Scaffold(
@@ -151,7 +156,14 @@ fun HomeScreen(
                     onToggleTopic = toggleTopic,
                     onClearTopics = { topicNames = "" },
                 )
-                if (mode == Mode.SAVED) {
+                if (mode == Mode.YOUTUBE) {
+                    YouTubeFeed(
+                        state = state,
+                        size = state.viewSize,
+                        onLoad = onRefresh,
+                        onChooseChannels = chooseSources,
+                    )
+                } else if (mode == Mode.SAVED) {
                     val saved = if (selectedTopics.isEmpty()) state.saved else state.saved.filter { it.topic in selectedTopics }
                     ArticleFeed(
                         articles = saved,
@@ -236,7 +248,10 @@ private fun FilterBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ModeSwitch(mode, onModeSelected, Modifier.weight(1f))
-        TopicButton(selectedTopics.firstOrNull(), topicCounts, onToggleTopic, onClearTopics)
+        // The YouTube tab filters by channel group instead of topic.
+        if (mode != Mode.YOUTUBE) {
+            TopicButton(selectedTopics.firstOrNull(), topicCounts, onToggleTopic, onClearTopics)
+        }
     }
 }
 
@@ -346,7 +361,7 @@ private fun ModeSwitch(selected: Mode, onSelect: (Mode) -> Unit, modifier: Modif
             ) {
                 Text(
                     option.label,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelMedium,
                     color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
                     maxLines = 1,
                 )

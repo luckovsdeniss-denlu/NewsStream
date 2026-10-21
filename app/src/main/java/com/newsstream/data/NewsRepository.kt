@@ -15,6 +15,7 @@ import com.newsstream.data.source.RedditSource
 import com.newsstream.data.source.ResponseCache
 import com.newsstream.data.source.RssNewsSource
 import com.newsstream.data.source.WikipediaSource
+import com.newsstream.data.source.YouTubeChannelSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -188,6 +189,33 @@ class NewsRepository(cacheDir: File) {
         RssNewsSource("Full Fact", "https://fullfact.org/feed/", Topic.POLITICS),
         WikipediaSource(),
         RssNewsSource("N+1", "https://nplus1.ru/rss", Topic.SCIENCE, language = "ru"),
+        // YouTube channels (public channel feeds, no key)
+        YouTubeChannelSource("BBC News", "UC16niRr50-MSBwiO3YDb3RA", Topic.WORLD),
+        YouTubeChannelSource("Al Jazeera English", "UCNye-wNBqNL5ZzHSJj3l8Bg", Topic.WORLD),
+        YouTubeChannelSource("DW News", "UCknLrEdhRCp1aegoMqRaCZg", Topic.WORLD),
+        YouTubeChannelSource("FRANCE 24 English", "UCQfwfsi5VrQ8yKZ-UWmAEFg", Topic.WORLD),
+        YouTubeChannelSource("Sky News", "UCoMdktPbSTixAyNGwb-UYkQ", Topic.WORLD),
+        YouTubeChannelSource("Reuters", "UChqUTb7kYRX8-EiaN3XFrSQ", Topic.WORLD),
+        YouTubeChannelSource("Associated Press", "UC52X5wxOL_s5yw0dQk7NtgA", Topic.WORLD),
+        YouTubeChannelSource("CNN", "UCupvZG-5ko_eiXAupbDfxWw", Topic.POLITICS),
+        YouTubeChannelSource("NBC News", "UCeY0bbntWzzVIaj2z3QigXg", Topic.POLITICS),
+        YouTubeChannelSource("ABC News", "UCBi2mrWuNuyYy4gbM6fU18Q", Topic.POLITICS),
+        YouTubeChannelSource("CBS News", "UC8p1vwvWtl6T73JiExfWs1g", Topic.POLITICS),
+        YouTubeChannelSource("Bloomberg Television", "UCIALMKvObZNtJ6AmdCLP7Lg", Topic.BUSINESS),
+        YouTubeChannelSource("CNBC", "UCvJJ_dzjViJCoLf5uKUTwoA", Topic.BUSINESS),
+        YouTubeChannelSource("The Verge", "UCddiUEpeqJcYeBxX1IVBKvQ", Topic.TECH),
+        YouTubeChannelSource("Marques Brownlee", "UCBJycsmduvYEL83R_U4JriQ", Topic.TECH),
+        YouTubeChannelSource("Linus Tech Tips", "UCXuqSBlHAE6Xw-yeJA0Tunw", Topic.TECH),
+        YouTubeChannelSource("NASA", "UCLA_DiR1FfKNvjuUpBHmylQ", Topic.SCIENCE),
+        YouTubeChannelSource("Veritasium", "UCHnyfMqiRRG1u-2MsSQLbXA", Topic.SCIENCE),
+        YouTubeChannelSource("Kurzgesagt", "UCsXVk37bltHxD1rDPwtNM8Q", Topic.SCIENCE),
+        YouTubeChannelSource("TED", "UCAuUUnT6oDeKwE6v1NGQxug", Topic.SCIENCE),
+        YouTubeChannelSource("Vox", "UCLXo7UDZvByw2ixzpQCufnA", Topic.GENERAL),
+        YouTubeChannelSource("The Guardian", "UCHpw8xwDNhU9gdohEcJu4aA", Topic.GENERAL),
+        YouTubeChannelSource("World Health Organization", "UC07-dOwgza1IguKA86jqxNA", Topic.HEALTH),
+        YouTubeChannelSource("ESPN", "UCiWLfSweyRNmLpgEHekhoAg", Topic.SPORTS),
+        YouTubeChannelSource("Дождь", "UCdubelOloxR3wzwJG9x8YqQ", Topic.GENERAL, language = "ru"),
+        YouTubeChannelSource("Настоящее время", "UCBG57608Hukev3d0d-gvLhQ", Topic.WORLD, language = "ru"),
         // Social
         RedditSource("worldnews", Topic.WORLD),
         RedditSource("news"),

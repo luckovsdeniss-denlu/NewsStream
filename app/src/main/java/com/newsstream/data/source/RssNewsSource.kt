@@ -84,7 +84,8 @@ class RssNewsSource(
         val link = this["link"]?.takeIf { it.isNotBlank() } ?: return null
         val date = this["pubDate"] ?: this["dc:date"] ?: this["published"] ?: this["updated"]
         val cleanTitle = htmlToText(title)
-        val rawSummary = this["description"] ?: this["summary"].orEmpty()
+        // YouTube feeds put the video description in <media:description>.
+        val rawSummary = this["description"] ?: this["summary"] ?: this["media:description"].orEmpty()
         val summary = htmlToText(rawSummary)
         // Many feeds embed the lead image as an <img> in the description instead.
         val image = this["image"] ?: INLINE_IMAGE.find(rawSummary)?.groupValues?.get(1) ?: this["thumb"]
@@ -106,6 +107,7 @@ class RssNewsSource(
         // "name" is the author's name inside an Atom <author> element.
         val TEXT_TAGS = setOf(
             "title", "description", "summary", "pubDate", "dc:date", "published", "updated", "dc:creator", "name",
+            "media:description",
         )
         const val MAX_ARTICLES = 30
         val INLINE_IMAGE = Regex("<img[^>]+src=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE)

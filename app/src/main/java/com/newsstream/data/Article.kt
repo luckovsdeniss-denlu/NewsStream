@@ -1,6 +1,6 @@
 package com.newsstream.data
 
-enum class ContentKind { NEWS, SOCIAL }
+enum class ContentKind { NEWS, SOCIAL, VIDEO }
 
 /** Social engagement counts; null means the platform doesn't report that metric. */
 data class Engagement(val likes: Int? = null, val comments: Int? = null, val shares: Int? = null)
@@ -33,3 +33,6 @@ data class Article(
     /** Unique across sources: two platforms may share the same link. */
     val id: String get() = "$source|$url"
 }
+
+/** A source name as shown to the user: YouTube channels without their internal suffix. */
+fun displaySourceName(name: String): String = name.removeSuffix(" (YouTube)")

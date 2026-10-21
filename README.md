@@ -2,7 +2,7 @@
 
 Android app skeleton (Kotlin, Jetpack Compose, Material 3).
 
-The home screen shows live headlines and social posts merged from many sources, newest first, with a News / Images / Saved switch and a Topics selector. Images shows a grid of the pictures attached to
+The home screen shows live headlines and social posts merged from many sources, newest first, with a News / Images / YouTube / Saved switch and a Topics selector. Images shows a grid of the pictures attached to
 stories in the selected topics; thumbnails are prefetched as each source arrives and cached in memory and on
 disk, so the grid appears instantly. Bookmark any story to keep it in Saved (stored on the device, available offline). Tap a story to read it; SHOW IMAGE loads its picture on demand. The sources button in the top bar picks which sources to show
 (none are selected at first; choices are saved across restarts and apply to every screen). Stories are grouped into World, Politics,
@@ -41,6 +41,10 @@ Configured in `data/NewsRepository.kt`:
   Quanta Magazine, IEEE Spectrum, NASA Earth Observatory, Aeon, Smithsonian Magazine, Atlas Obscura, the
   fact-checkers PolitiFact, Snopes and Full Fact, N+1 (Russian science), and Wikipedia's daily "In the news" items
   and featured article (REST API, no key).
+- YouTube (tab of its own, public channel feeds, no key): BBC News, Al Jazeera English, DW News, FRANCE 24,
+  Sky News, Reuters, AP, CNN, NBC, ABC, CBS, Bloomberg TV, CNBC, The Verge, Marques Brownlee, Linus Tech Tips,
+  NASA, Veritasium, Kurzgesagt, TED, Vox, The Guardian, WHO, ESPN, Дождь, Настоящее время — grouped by channel
+  type. YouTube's "Posts" (community) have no official API, so only videos are shown.
 - Russian-language news (RSS, no key): BBC Русская служба, DW на русском, Euronews на русском, Meduza,
   Новая газета Европа, The Insider, РБК, Коммерсантъ, Ведомости, Интерфакс, ТАСС, РИА Новости, Лента.ру,
   Фонтанка, Хабр, Google Новости; plus GNews Russian headlines when a GNews key is set. The sources sheet has an

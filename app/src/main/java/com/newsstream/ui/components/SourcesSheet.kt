@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.FilterChip
@@ -42,6 +43,8 @@ import com.newsstream.data.ContentKind
 import com.newsstream.data.SourceInfo
 import com.newsstream.data.Topic
 import com.newsstream.ui.SocialColor
+import com.newsstream.ui.YouTubeColor
+import com.newsstream.data.displaySourceName
 import com.newsstream.ui.color
 import com.newsstream.ui.icon
 import com.newsstream.ui.NewsUiState
@@ -123,6 +126,11 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
                     icon = Icons.Filled.Forum,
                     color = SocialColor,
                     sources = state.sources.filter { it.kind == ContentKind.SOCIAL },
+                ) + SourceGroup(
+                    label = "YouTube",
+                    icon = Icons.Filled.SmartDisplay,
+                    color = YouTubeColor,
+                    sources = state.sources.filter { it.kind == ContentKind.VIDEO },
                 )
             }
             Column(
@@ -201,7 +209,7 @@ private fun SourceChip(
 ) {
     val shape = RoundedCornerShape(8.dp)
     Text(
-        source.name,
+        displaySourceName(source.name),
         style = MaterialTheme.typography.labelMedium,
         color = when {
             failed -> MaterialTheme.colorScheme.error

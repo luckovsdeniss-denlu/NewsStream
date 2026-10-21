@@ -46,3 +46,6 @@ val Topic.color: Color
 
 /** Colour for the social platforms group. */
 val SocialColor = Color(0xFF8C9BFF)
+
+/** Colour for the YouTube channels group. */
+val YouTubeColor = Color(0xFFFF6B6B)
