@@ -41,7 +41,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -80,7 +79,7 @@ private fun channelGroup(source: SourceInfo): ChannelGroup {
 
 /**
  * Latest videos from the selected YouTube channels, newest first, filtered by channel group.
- * Tapping a video opens it in YouTube.
+ * Tapping a video plays it in the app.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -90,6 +89,7 @@ fun YouTubeFeed(
     onLoad: () -> Unit,
     onChooseChannels: () -> Unit,
     onTurnOnChannels: (List<String>) -> Unit,
+    onVideoClick: (Article) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val channels = remember(state.sources) { state.sources.filter { it.kind == ContentKind.VIDEO } }
@@ -138,7 +138,7 @@ fun YouTubeFeed(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(videos, key = { it.id }) { video -> VideoTile(video, size, groupOf[video.source]) }
+                    items(videos, key = { it.id }) { video -> VideoTile(video, size, groupOf[video.source], onClick = { onVideoClick(video) }) }
                 }
                 state.isLoading -> CircularProgressIndicator(center)
                 state.videosNotLoadedYet || videos.isEmpty() && current != null ->
@@ -176,13 +176,12 @@ private fun GroupChip(group: ChannelGroup, selected: Boolean, active: Boolean, o
 
 /** A 16:9 thumbnail with a play badge, then the title and channel (text hidden at the smallest size). */
 @Composable
-private fun VideoTile(video: Article, size: ViewSize, group: ChannelGroup?) {
-    val uriHandler = LocalUriHandler.current
+private fun VideoTile(video: Article, size: ViewSize, group: ChannelGroup?, onClick: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .clickable { uriHandler.openUri(video.url) },
+            .clickable(onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Box(

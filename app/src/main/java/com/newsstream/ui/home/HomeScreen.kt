@@ -178,6 +178,7 @@ fun HomeScreen(
                         onLoad = onRefreshVideos,
                         onChooseChannels = chooseSources,
                         onTurnOnChannels = onTurnOnChannels,
+                        onVideoClick = onArticleClick,
                     )
                 } else if (mode == Mode.SAVED) {
                     val saved = if (selectedTopics.isEmpty()) state.saved else state.saved.filter { it.topic in selectedTopics }

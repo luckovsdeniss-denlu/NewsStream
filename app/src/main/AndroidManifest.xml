@@ -7,7 +7,11 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.NewsStream">
-        <activity android:name=".MainActivity" android:exported="true">
+        <!-- Rotation is handled by Compose, so a playing video isn't restarted when the screen turns. -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

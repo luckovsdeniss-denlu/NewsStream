@@ -9,12 +9,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.newsstream.data.ContentKind
 import com.newsstream.ui.NewsViewModel
 import com.newsstream.ui.article.ArticleScreen
 import com.newsstream.ui.components.SourceActions
 import com.newsstream.ui.home.HomeScreen
 import com.newsstream.ui.insights.InsightsScreen
 import com.newsstream.ui.insights.TermScreen
+import com.newsstream.ui.youtube.VideoPlayerScreen
 import com.newsstream.ui.theme.NewsStreamTheme
 
 class MainActivity : ComponentActivity() {
@@ -32,7 +34,19 @@ class MainActivity : ComponentActivity() {
                 val openArticle = state.articles.firstOrNull { it.id == openArticleId }
                     ?: state.saved.firstOrNull { it.id == openArticleId }
 
-                if (openArticle != null) {
+                if (openArticle != null && openArticle.kind == ContentKind.VIDEO) {
+                    // More from the same channel first, then the newest from other channels.
+                    val others = state.articles.filter { it.kind == ContentKind.VIDEO && it.id != openArticle.id }
+                    VideoPlayerScreen(
+                        video = openArticle,
+                        saved = openArticle.id in state.savedIds,
+                        upNext = (others.filter { it.source == openArticle.source } + others.filter { it.source != openArticle.source })
+                            .take(10),
+                        onToggleSave = { newsViewModel.toggleSaved(openArticle) },
+                        onPlay = { openArticleId = it.id },
+                        onBack = { openArticleId = null },
+                    )
+                } else if (openArticle != null) {
                     ArticleScreen(
                         article = openArticle,
                         saved = openArticle.id in state.savedIds,

@@ -56,6 +56,8 @@ Configured in `data/NewsRepository.kt`:
   Sky News, Reuters, AP, CNN, NBC, ABC, CBS, Bloomberg TV, CNBC, The Verge, Marques Brownlee, Linus Tech Tips,
   NASA, Veritasium, Kurzgesagt, TED, Vox, The Guardian, WHO, ESPN, Дождь, Настоящее время — grouped by channel
   type. YouTube's "Posts" (community) have no official API, so only videos are shown.
+  Videos play inside the app with YouTube's embedded player (fullscreen turns to landscape), with
+  the description and an up-next list; channels that block embedding can be opened in YouTube.
 - Russian-language news (RSS, no key): BBC Русская служба, DW на русском, Euronews на русском, Meduza,
   Новая газета Европа, The Insider, РБК, Коммерсантъ, Ведомости, Интерфакс, ТАСС, РИА Новости, Лента.ру,
   Фонтанка, Хабр, Google Новости; plus GNews Russian headlines when a GNews key is set. The sources sheet has an
