@@ -49,6 +49,7 @@ class MainActivity : ComponentActivity() {
                         onToggleSave = newsViewModel::toggleSaved,
                         onViewSizeChange = newsViewModel::setViewSize,
                         onRefreshVideos = newsViewModel::refreshVideos,
+                        onTurnOnChannels = newsViewModel::turnOnChannels,
                     )
                 }
             }

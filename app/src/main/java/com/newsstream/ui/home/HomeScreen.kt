@@ -78,6 +78,7 @@ fun HomeScreen(
     onToggleSave: (Article) -> Unit,
     onViewSizeChange: (ViewSize) -> Unit,
     onRefreshVideos: () -> Unit,
+    onTurnOnChannels: (List<String>) -> Unit,
 ) {
     var mode by rememberSaveable { mutableStateOf(Mode.NEWS) }
     var showSources by rememberSaveable { mutableStateOf(false) }
@@ -167,6 +168,7 @@ fun HomeScreen(
                         size = state.viewSize,
                         onLoad = onRefreshVideos,
                         onChooseChannels = chooseSources,
+                        onTurnOnChannels = onTurnOnChannels,
                     )
                 } else if (mode == Mode.SAVED) {
                     val saved = if (selectedTopics.isEmpty()) state.saved else state.saved.filter { it.topic in selectedTopics }

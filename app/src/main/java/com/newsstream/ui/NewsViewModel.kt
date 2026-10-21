@@ -107,6 +107,13 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) { runCatching { savedStore.store(_state.value.saved) } }
     }
 
+    /** Switches the given YouTube channels on and loads their videos. */
+    fun turnOnChannels(names: List<String>) {
+        setHidden(_state.value.hiddenSources - names.toSet())
+        videosRequested = true
+        load(names.filter { it !in articlesBySource })
+    }
+
     fun setSourceVisible(name: String, visible: Boolean) {
         setHidden(if (visible) _state.value.hiddenSources - name else _state.value.hiddenSources + name)
         if (visible) loadIfMissing(listOf(name))

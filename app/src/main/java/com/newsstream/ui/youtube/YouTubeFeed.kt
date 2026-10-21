@@ -89,16 +89,16 @@ fun YouTubeFeed(
     size: ViewSize,
     onLoad: () -> Unit,
     onChooseChannels: () -> Unit,
+    onTurnOnChannels: (List<String>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val channels = remember(state.sources) { state.sources.filter { it.kind == ContentKind.VIDEO } }
     val groupOf = remember(channels) { channels.associate { it.name to channelGroup(it) } }
-    // Groups are kept by label so the selection survives rotation.
-    // Groups in a fixed order, only those with a selected channel.
+    // Every category is always listed (in channel-list order), whether or not its channels are on.
+    val groups = remember(channels) { channels.map { channelGroup(it) }.distinct() }
     val selectedChannels = channels.filter { it.name !in state.hiddenSources }
-    val groups = remember(selectedChannels) {
-        selectedChannels.map { channelGroup(it) }.distinct()
-    }
+    val activeGroups = selectedChannels.map { groupOf.getValue(it.name).label }.toSet()
+    // Kept by label so the selection survives rotation.
     var group by rememberSaveable { mutableStateOf<String?>(null) }
     val videos = remember(state.articles, group) {
         state.articles.filter { it.kind == ContentKind.VIDEO && (group == null || groupOf[it.source]?.label == group) }
@@ -106,23 +106,30 @@ fun YouTubeFeed(
     val gridState = rememberSaveable(group, size, saver = LazyGridState.Saver) { LazyGridState() }
 
     Column(modifier.fillMaxSize()) {
-        if (groups.size > 1) {
-            FlowRow(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                GroupChip(ChannelGroup("All", YouTubeColor, Icons.Filled.SmartDisplay), group == null) { group = null }
-                groups.forEach { g -> GroupChip(g, group == g.label) { group = g.label } }
+        FlowRow(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            GroupChip(ChannelGroup("All", YouTubeColor, Icons.Filled.SmartDisplay), group == null, active = true) {
+                group = null
+            }
+            groups.forEach { g ->
+                GroupChip(g, group == g.label, active = g.label in activeGroups) { group = g.label }
             }
         }
         Box(Modifier.fillMaxSize()) {
+            val center = Modifier.align(Alignment.Center)
+            val current = group
             when {
-                selectedChannels.isEmpty() -> EmptyMessage(
-                    "No YouTube channels selected yet.",
-                    "Choose channels",
-                    onChooseChannels,
-                    Modifier.align(Alignment.Center),
+                current == null && selectedChannels.isEmpty() ->
+                    EmptyMessage("No YouTube channels selected yet.", "Choose channels", onChooseChannels, center)
+                // A category whose channels are all off: offer to switch them on.
+                current != null && current !in activeGroups -> EmptyMessage(
+                    "No $current channels are on yet.",
+                    "Turn on $current channels",
+                    { onTurnOnChannels(channels.filter { groupOf[it.name]?.label == current }.map { it.name }) },
+                    center,
                 )
                 videos.isNotEmpty() -> LazyVerticalGrid(
                     columns = GridCells.Fixed(size.imageColumns),
@@ -133,14 +140,10 @@ fun YouTubeFeed(
                 ) {
                     items(videos, key = { it.id }) { video -> VideoTile(video, size, groupOf[video.source]) }
                 }
-                state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                state.videosNotLoadedYet -> EmptyMessage(
-                    "No videos loaded yet.",
-                    "Load videos",
-                    onLoad,
-                    Modifier.align(Alignment.Center),
-                )
-                else -> EmptyMessage("No videos in this group yet.", null, onLoad, Modifier.align(Alignment.Center))
+                state.isLoading -> CircularProgressIndicator(center)
+                state.videosNotLoadedYet || videos.isEmpty() && current != null ->
+                    EmptyMessage("No videos loaded yet.", "Load videos", onLoad, center)
+                else -> EmptyMessage("No videos in this group yet.", null, onLoad, center)
             }
         }
     }
@@ -148,8 +151,10 @@ fun YouTubeFeed(
 
 /** A group filter chip in the group's colour: tinted when selected, outlined when not. */
 @Composable
-private fun GroupChip(group: ChannelGroup, selected: Boolean, onClick: () -> Unit) {
+private fun GroupChip(group: ChannelGroup, selected: Boolean, active: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(8.dp)
+    // Categories with no channels switched on are dimmed.
+    val alpha = if (active || selected) 1f else 0.45f
     Row(
         Modifier
             .clip(shape)
@@ -160,11 +165,11 @@ private fun GroupChip(group: ChannelGroup, selected: Boolean, onClick: () -> Uni
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        Icon(group.icon, contentDescription = null, tint = group.color, modifier = Modifier.size(14.dp))
+        Icon(group.icon, contentDescription = null, tint = group.color.copy(alpha = alpha), modifier = Modifier.size(14.dp))
         Text(
             group.label,
             style = MaterialTheme.typography.labelLarge,
-            color = if (selected) group.color else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = (if (selected) group.color else MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = alpha),
         )
     }
 }
