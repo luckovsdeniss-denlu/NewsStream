@@ -134,6 +134,11 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
         return picked
     }
 
+    fun setSourcesVisible(names: List<String>, visible: Boolean) {
+        setHidden(if (visible) _state.value.hiddenSources - names.toSet() else _state.value.hiddenSources + names)
+        if (visible) loadIfMissing(names)
+    }
+
     fun hideAllSources() = setHidden(_state.value.sources.map { it.name }.toSet())
 
     /** Folds or unfolds a group in the sources sheet and saves the choice right away. */

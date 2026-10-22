@@ -2,6 +2,7 @@ package com.newsstream.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -50,6 +51,8 @@ import com.newsstream.ui.NewsUiState
 /** Callbacks for changing which sources are shown. */
 class SourceActions(
     val setVisible: (name: String, visible: Boolean) -> Unit,
+    /** Switches several sources on or off at once (e.g. a whole sub-group). */
+    val setManyVisible: (names: List<String>, visible: Boolean) -> Unit,
     val hideAll: () -> Unit,
     /** Unfolds or folds a source group; the choice is saved automatically. */
     val setGroupExpanded: (label: String, expanded: Boolean) -> Unit,
@@ -143,25 +146,78 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
                         )
                     }
                     AnimatedVisibility(visible = expanded) {
-                        FlowRow(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
-                            verticalArrangement = Arrangement.spacedBy(5.dp),
-                        ) {
-                            group.sources.sortedBy { it.name.lowercase() }.forEach { source ->
-                                SourceChip(
-                                    source = source,
-                                    color = group.color,
-                                    selected = source.name !in state.hiddenSources,
-                                    failed = source.name in state.allFailedSources,
-                                    onToggle = { actions.setVisible(source.name, it) },
-                                )
+                        if (group.label == Topic.WORLD.label) {
+                            // World is large, so it is split into regions (and Russian-language).
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                val byRegion = group.sources.groupBy(::worldRegion)
+                                WORLD_REGIONS.forEach { region ->
+                                    val sources = byRegion[region].orEmpty()
+                                    if (sources.isNotEmpty()) {
+                                        SubgroupHeader(region, sources, group.color, state.hiddenSources, actions)
+                                        SourceChips(sources, group.color, state, actions)
+                                    }
+                                }
                             }
+                        } else {
+                            SourceChips(group.sources, group.color, state, actions)
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/** A group's (or sub-group's) sources as wrapping chips, alphabetically. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SourceChips(sources: List<SourceInfo>, color: Color, state: NewsUiState, actions: SourceActions) {
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        sources.sortedBy { it.name.lowercase() }.forEach { source ->
+            SourceChip(
+                source = source,
+                color = color,
+                selected = source.name !in state.hiddenSources,
+                failed = source.name in state.allFailedSources,
+                onToggle = { actions.setVisible(source.name, it) },
+            )
+        }
+    }
+}
+
+/**
+ * A sub-group's name and how many of its sources are on; tapping it switches the whole sub-group
+ * on (or off, when all are already on).
+ */
+@Composable
+private fun SubgroupHeader(
+    label: String,
+    sources: List<SourceInfo>,
+    color: Color,
+    hiddenSources: Set<String>,
+    actions: SourceActions,
+) {
+    val onCount = sources.count { it.name !in hiddenSources }
+    val allOn = onCount == sources.size
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .clickable { actions.setManyVisible(sources.map { it.name }, !allOn) }
+            .padding(start = 4.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(Modifier.size(width = 3.dp, height = 12.dp).background(color.copy(alpha = 0.7f)))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = color)
+        Text(
+            "$onCount/${sources.size} · ${if (allOn) "tap to turn off" else "tap to turn all on"}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

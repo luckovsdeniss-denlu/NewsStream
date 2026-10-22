@@ -76,6 +76,7 @@ class MainActivity : ComponentActivity() {
                         onArticleClick = { openArticleId = it.id },
                         sourceActions = SourceActions(
                             setVisible = newsViewModel::setSourceVisible,
+                            setManyVisible = newsViewModel::setSourcesVisible,
                             hideAll = newsViewModel::hideAllSources,
                             setGroupExpanded = newsViewModel::setGroupExpanded,
                         ),
