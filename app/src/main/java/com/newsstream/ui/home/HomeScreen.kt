@@ -31,7 +31,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.RssFeed
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -148,7 +148,7 @@ fun HomeScreen(
                         SizeButton(state.viewSize, onViewSizeChange)
                         IconButton(onClick = { showSources = true }) {
                             Icon(
-                                Icons.Filled.RssFeed,
+                                Icons.Filled.Tune,
                                 contentDescription = "Choose sources",
                                 // Highlighted while some sources are switched off.
                                 tint = if (sourcesFiltered) {
