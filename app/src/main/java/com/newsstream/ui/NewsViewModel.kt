@@ -9,6 +9,7 @@ import com.newsstream.data.NewsRepository
 import com.newsstream.data.SourceInfo
 import com.newsstream.data.SavedArticles
 import com.newsstream.data.SourcePreferences
+import com.newsstream.data.Topic
 import com.newsstream.ui.images.thumbnailRequest
 import coil.imageLoader
 import kotlinx.coroutines.Dispatchers
@@ -117,6 +118,20 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     fun setSourceVisible(name: String, visible: Boolean) {
         setHidden(if (visible) _state.value.hiddenSources - name else _state.value.hiddenSources + name)
         if (visible) loadIfMissing(listOf(name))
+    }
+
+    /**
+     * Replaces the news-source selection with [count] random news sources (from [topic]'s sources
+     * when a topic is chosen) and loads them. Social and YouTube choices are left as they are.
+     * Returns the names picked.
+     */
+    fun pickRandomNewsSources(count: Int = 5, topic: Topic? = null): List<String> {
+        val news = _state.value.sources.filter { it.kind == ContentKind.NEWS }
+        val pool = news.filter { topic == null || it.category == topic }.ifEmpty { news }
+        val picked = pool.shuffled().take(count).map { it.name }
+        setHidden(_state.value.hiddenSources + news.map { it.name } - picked.toSet())
+        loadIfMissing(picked)
+        return picked
     }
 
     fun hideAllSources() = setHidden(_state.value.sources.map { it.name }.toSet())

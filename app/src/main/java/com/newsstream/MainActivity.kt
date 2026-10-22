@@ -84,6 +84,7 @@ class MainActivity : ComponentActivity() {
                         onRefreshVideos = newsViewModel::refreshVideos,
                         onTurnOnChannels = newsViewModel::turnOnChannels,
                         onOpenInsights = { showInsights = true },
+                        onRandomSources = { topic -> newsViewModel.pickRandomNewsSources(5, topic) },
                     )
                 }
             }

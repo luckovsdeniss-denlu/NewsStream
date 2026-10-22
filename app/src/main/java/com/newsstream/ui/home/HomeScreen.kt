@@ -1,5 +1,8 @@
 package com.newsstream.ui.home
 
+import com.newsstream.data.displaySourceName
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -27,6 +30,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.RssFeed
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -81,8 +85,10 @@ fun HomeScreen(
     onRefreshVideos: () -> Unit,
     onTurnOnChannels: (List<String>) -> Unit,
     onOpenInsights: () -> Unit,
+    onRandomSources: (Topic?) -> List<String>,
 ) {
     var mode by rememberSaveable { mutableStateOf(Mode.NEWS) }
+    val context = LocalContext.current
     var showSources by rememberSaveable { mutableStateOf(false) }
     if (showSources) {
         SourcesSheet(state, sourceActions, onDismiss = { showSources = false })
@@ -170,6 +176,14 @@ fun HomeScreen(
                     selectedTopics = selectedTopics,
                     onToggleTopic = toggleTopic,
                     onClearTopics = { topicNames = "" },
+                    onRandomSources = {
+                        val picked = onRandomSources(selectedTopics.firstOrNull())
+                        Toast.makeText(
+                            context,
+                            "Random sources: " + picked.joinToString { displaySourceName(it) },
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    },
                 )
                 if (mode == Mode.YOUTUBE) {
                     YouTubeFeed(
@@ -258,6 +272,7 @@ private fun FilterBar(
     selectedTopics: Set<Topic>,
     onToggleTopic: (Topic) -> Unit,
     onClearTopics: () -> Unit,
+    onRandomSources: () -> Unit,
 ) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
@@ -269,6 +284,27 @@ private fun FilterBar(
         if (mode != Mode.YOUTUBE) {
             TopicButton(selectedTopics.firstOrNull(), topicCounts, onToggleTopic, onClearTopics)
         }
+        if (mode == Mode.NEWS) RandomSourcesButton(onRandomSources)
+    }
+}
+
+/** Picks 5 random news sources (from the chosen topic, if any) in place of the current ones. */
+@Composable
+private fun RandomSourcesButton(onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            Icons.Filled.Shuffle,
+            contentDescription = "Pick 5 random news sources",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 
