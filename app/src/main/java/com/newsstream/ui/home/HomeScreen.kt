@@ -26,8 +26,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Shuffle
@@ -55,13 +53,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
 import com.newsstream.data.ContentKind
-import com.newsstream.data.Topic
 import com.newsstream.ui.NewsUiState
 import com.newsstream.ui.ViewSize
 import com.newsstream.ui.components.ArticleFeed
 import com.newsstream.ui.components.SourceActions
 import com.newsstream.ui.components.SourcesSheet
-import com.newsstream.ui.icon
 import com.newsstream.ui.images.ImageGrid
 import com.newsstream.ui.youtube.YouTubeFeed
 import com.newsstream.ui.theme.AppBackground
@@ -85,7 +81,7 @@ fun HomeScreen(
     onRefreshVideos: () -> Unit,
     onTurnOnChannels: (List<String>) -> Unit,
     onOpenInsights: () -> Unit,
-    onRandomSources: (Topic?) -> List<String>,
+    onRandomSources: () -> List<String>,
 ) {
     var mode by rememberSaveable { mutableStateOf(Mode.NEWS) }
     val context = LocalContext.current
@@ -96,20 +92,18 @@ fun HomeScreen(
     val sourcesFiltered = state.hiddenSources.isNotEmpty()
     val chooseSources: () -> Unit = { showSources = true }
     val noSourcesMessage = "No sources selected yet. Choose the sources you want to follow."
-    // The selected topic (one at a time, empty for all), saved by name so it survives rotation.
-    var topicNames by rememberSaveable { mutableStateOf("") }
-    val selectedTopics = remember(topicNames) {
-        topicNames.split(',').mapNotNull { name -> Topic.entries.firstOrNull { it.name == name } }.toSet()
-    }
-    // Selecting a topic replaces the previous one; selecting it again goes back to all topics.
-    val toggleTopic: (Topic) -> Unit = { topic ->
-        topicNames = if (topic in selectedTopics) "" else topic.name
+    val pickRandomSources: () -> Unit = {
+        val picked = onRandomSources()
+        Toast.makeText(
+            context,
+            "Random sources: " + picked.joinToString { displaySourceName(it) },
+            Toast.LENGTH_LONG,
+        ).show()
     }
 
     // Videos live in the YouTube tab only.
     val stories = remember(state.articles) { state.articles.filter { it.kind != ContentKind.VIDEO } }
-    val topicCounts = remember(stories) { stories.groupingBy { it.topic }.eachCount() }
-    val visible = if (selectedTopics.isEmpty()) stories else stories.filter { it.topic in selectedTopics }
+    val visible = stories
 
     AppBackground {
         Scaffold(
@@ -172,18 +166,7 @@ fun HomeScreen(
                 FilterBar(
                     mode = mode,
                     onModeSelected = { mode = it },
-                    topicCounts = topicCounts,
-                    selectedTopics = selectedTopics,
-                    onToggleTopic = toggleTopic,
-                    onClearTopics = { topicNames = "" },
-                    onRandomSources = {
-                        val picked = onRandomSources(selectedTopics.firstOrNull())
-                        Toast.makeText(
-                            context,
-                            "Random sources: " + picked.joinToString { displaySourceName(it) },
-                            Toast.LENGTH_LONG,
-                        ).show()
-                    },
+                    onRandomSources = pickRandomSources,
                 )
                 if (mode == Mode.YOUTUBE) {
                     YouTubeFeed(
@@ -195,22 +178,15 @@ fun HomeScreen(
                         onVideoClick = onArticleClick,
                     )
                 } else if (mode == Mode.SAVED) {
-                    val saved = if (selectedTopics.isEmpty()) state.saved else state.saved.filter { it.topic in selectedTopics }
                     ArticleFeed(
-                        articles = saved,
+                        articles = state.saved,
                         isLoading = false,
                         failedSources = emptyList(),
                         onRefresh = onRefresh,
                         onArticleClick = onArticleClick,
-                        emptyMessage = if (state.saved.isEmpty()) {
-                            "No saved stories yet. Tap the bookmark on any story to save it."
-                        } else {
-                            "No saved stories in these topics."
-                        },
+                        emptyMessage = "No saved stories yet. Tap the bookmark on any story to save it.",
                         emptyActionLabel = null,
-                        onTopicClick = toggleTopic,
-                        selectedTopics = selectedTopics,
-                        pageResetKey = "saved|$topicNames",
+                        pageResetKey = "saved",
                         savedIds = state.savedIds,
                         onToggleSave = onToggleSave,
                         size = state.viewSize,
@@ -224,7 +200,7 @@ fun HomeScreen(
                         idleMessage = if (state.noSourcesSelected) noSourcesMessage else "No news loaded yet.",
                         idleActionLabel = if (state.noSourcesSelected) "Choose sources" else "Load news",
                         onArticleClick = onArticleClick,
-                        resetKey = "$topicNames|${state.hiddenSources.sorted()}",
+                        resetKey = state.hiddenSources.sorted(),
                         size = state.viewSize,
                     )
                 } else {
@@ -250,9 +226,10 @@ fun HomeScreen(
                             state.notLoadedYet -> "Load news"
                             else -> "Try again"
                         },
-                        onTopicClick = toggleTopic,
-                        selectedTopics = selectedTopics,
-                        pageResetKey = "$topicNames|${state.hiddenSources.sorted()}",
+                        // On the starting screen, offer a random set of sources next to choosing them.
+                        emptySecondaryLabel = if (state.noSourcesSelected) "Random 5 sources" else null,
+                        onEmptySecondary = pickRandomSources,
+                        pageResetKey = state.hiddenSources.sorted(),
                         savedIds = state.savedIds,
                         onToggleSave = onToggleSave,
                         size = state.viewSize,
@@ -263,15 +240,11 @@ fun HomeScreen(
     }
 }
 
-/** One compact row: the News / Images / Saved switch and a single-choice topic button. */
+/** One compact row: the News / Images / YouTube / Saved switch, plus the random-sources button in News. */
 @Composable
 private fun FilterBar(
     mode: Mode,
     onModeSelected: (Mode) -> Unit,
-    topicCounts: Map<Topic, Int>,
-    selectedTopics: Set<Topic>,
-    onToggleTopic: (Topic) -> Unit,
-    onClearTopics: () -> Unit,
     onRandomSources: () -> Unit,
 ) {
     Row(
@@ -280,15 +253,11 @@ private fun FilterBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ModeSwitch(mode, onModeSelected, Modifier.weight(1f))
-        // The YouTube tab filters by channel group instead of topic.
-        if (mode != Mode.YOUTUBE) {
-            TopicButton(selectedTopics.firstOrNull(), topicCounts, onToggleTopic, onClearTopics)
-        }
         if (mode == Mode.NEWS) RandomSourcesButton(onRandomSources)
     }
 }
 
-/** Picks 5 random news sources (from the chosen topic, if any) in place of the current ones. */
+/** Picks 5 random news sources in place of the current ones. */
 @Composable
 private fun RandomSourcesButton(onClick: () -> Unit) {
     Box(
@@ -305,69 +274,6 @@ private fun RandomSourcesButton(onClick: () -> Unit) {
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(20.dp),
         )
-    }
-}
-
-/** Compact button showing the current topic; its menu picks exactly one topic, or all. */
-@Composable
-private fun TopicButton(
-    selected: Topic?,
-    topicCounts: Map<Topic, Int>,
-    onSelect: (Topic) -> Unit,
-    onClear: () -> Unit,
-) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        Row(
-            Modifier
-                .height(48.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    if (selected != null) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                )
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp))
-                .clickable { open = true }
-                .padding(start = 12.dp, end = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Icon(
-                selected?.icon ?: Icons.Filled.Category,
-                contentDescription = "Topic",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
-            )
-            Text(
-                selected?.label ?: "All",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(
-                text = { Text("All topics") },
-                leadingIcon = { Icon(Icons.Filled.Category, contentDescription = null) },
-                trailingIcon = { if (selected == null) Icon(Icons.Filled.Check, contentDescription = "Selected") },
-                onClick = {
-                    onClear()
-                    open = false
-                },
-            )
-            Topic.entries.forEach { topic ->
-                val count = topicCounts[topic] ?: 0
-                DropdownMenuItem(
-                    text = { Text(if (count > 0) "${topic.label} ($count)" else topic.label) },
-                    leadingIcon = { Icon(topic.icon, contentDescription = null) },
-                    trailingIcon = { if (topic == selected) Icon(Icons.Filled.Check, contentDescription = "Selected") },
-                    enabled = count > 0 || topic == selected || topicCounts.isEmpty(),
-                    onClick = {
-                        if (topic != selected) onSelect(topic)
-                        open = false
-                    },
-                )
-            }
-        }
     }
 }
 

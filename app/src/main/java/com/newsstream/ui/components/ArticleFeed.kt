@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -70,6 +71,9 @@ fun ArticleFeed(
     emptyMessage: String = "Couldn't load any news. Check your connection.",
     /** Label of the empty-state button, or null for no button. */
     emptyActionLabel: String? = "Try again",
+    /** A second empty-state button (e.g. picking random sources), or null for none. */
+    emptySecondaryLabel: String? = null,
+    onEmptySecondary: () -> Unit = {},
     /** When set, tapping a card's topic tag calls this (e.g. to toggle a topic filter). */
     onTopicClick: ((Topic) -> Unit)? = null,
     selectedTopics: Set<Topic> = emptySet(),
@@ -150,7 +154,14 @@ fun ArticleFeed(
                 }
             }
             isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-            else -> EmptyState(emptyMessage, emptyActionLabel, onRefresh, Modifier.align(Alignment.Center))
+            else -> EmptyState(
+                emptyMessage,
+                emptyActionLabel,
+                onRefresh,
+                emptySecondaryLabel,
+                onEmptySecondary,
+                Modifier.align(Alignment.Center),
+            )
         }
         if (isLoading && articles.isNotEmpty()) {
             LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -164,7 +175,14 @@ private const val PAGE_SIZE = 30
 private const val LOAD_MORE_THRESHOLD = 3
 
 @Composable
-private fun EmptyState(message: String, actionLabel: String?, onRefresh: () -> Unit, modifier: Modifier = Modifier) {
+private fun EmptyState(
+    message: String,
+    actionLabel: String?,
+    onRefresh: () -> Unit,
+    secondaryLabel: String?,
+    onSecondary: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier.padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -175,6 +193,12 @@ private fun EmptyState(message: String, actionLabel: String?, onRefresh: () -> U
             OutlinedButton(onClick = onRefresh) {
                 Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(actionLabel, Modifier.padding(start = 8.dp), style = MaterialTheme.typography.labelLarge)
+            }
+        }
+        if (secondaryLabel != null) {
+            OutlinedButton(onClick = onSecondary) {
+                Icon(Icons.Filled.Shuffle, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(secondaryLabel, Modifier.padding(start = 8.dp), style = MaterialTheme.typography.labelLarge)
             }
         }
     }

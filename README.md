@@ -2,8 +2,8 @@
 
 Android app skeleton (Kotlin, Jetpack Compose, Material 3).
 
-The home screen shows live headlines and social posts merged from many sources, newest first, with a News / Images / YouTube / Saved switch and a Topics selector. In News, the shuffle button switches to 5 random news sources (from the chosen topic, if one is selected). Images shows a grid of the pictures attached to
-stories in the selected topics; thumbnails are prefetched as each source arrives and cached in memory and on
+The home screen shows live headlines and social posts merged from many sources, newest first, with a News / Images / YouTube / Saved switch. In News, the shuffle button (also offered on the empty starting screen) switches to 5 random news sources. Images shows a grid of the pictures attached to
+the loaded stories; thumbnails are prefetched as each source arrives and cached in memory and on
 disk, so the grid appears instantly. Bookmark any story to keep it in Saved (stored on the device, available offline). Tap a story to read it; SHOW IMAGE loads its picture on demand. The sources button in the top bar picks which sources to show
 (none are selected at first; choices are saved across restarts and apply to every screen). Stories are grouped into World, Politics,
 Business, Technology, Science, Climate, Health, Sports, Culture and General (`data/Topic.kt`: source sections and
