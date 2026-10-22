@@ -76,9 +76,7 @@ class MainActivity : ComponentActivity() {
                         onArticleClick = { openArticleId = it.id },
                         sourceActions = SourceActions(
                             setVisible = newsViewModel::setSourceVisible,
-                            showAll = newsViewModel::showAllSources,
                             hideAll = newsViewModel::hideAllSources,
-                            showLanguage = newsViewModel::showLanguage,
                             setGroupExpanded = newsViewModel::setGroupExpanded,
                         ),
                         onToggleSave = newsViewModel::toggleSaved,

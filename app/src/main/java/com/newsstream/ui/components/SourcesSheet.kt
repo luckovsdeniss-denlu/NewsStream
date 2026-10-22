@@ -24,8 +24,6 @@ import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -52,15 +50,10 @@ import com.newsstream.ui.NewsUiState
 /** Callbacks for changing which sources are shown. */
 class SourceActions(
     val setVisible: (name: String, visible: Boolean) -> Unit,
-    val showAll: () -> Unit,
     val hideAll: () -> Unit,
-    /** Shows only sources in this language ("en", "ru"), or every source for null. */
-    val showLanguage: (language: String?) -> Unit,
     /** Unfolds or folds a source group; the choice is saved automatically. */
     val setGroupExpanded: (label: String, expanded: Boolean) -> Unit,
 )
-
-private val LANGUAGES = listOf(null to "All", "en" to "English", "ru" to "Русский")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -87,28 +80,7 @@ fun SourcesSheet(state: NewsUiState, actions: SourceActions, onDismiss: () -> Un
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
-                TextButton(onClick = actions.showAll) { Text("Select all") }
-                TextButton(onClick = actions.hideAll) { Text("None") }
-            }
-            // Language quick filter: highlighted when exactly that language's sources are on.
-            val visibleLanguages = state.sources.filter { it.name !in state.hiddenSources }.map { it.language }.toSet()
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                LANGUAGES.forEach { (code, label) ->
-                    val active = if (code == null) state.hiddenSources.isEmpty() else visibleLanguages == setOf(code)
-                    FilterChip(
-                        selected = active,
-                        onClick = { actions.showLanguage(code) },
-                        label = { Text(label) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            labelColor = MaterialTheme.colorScheme.primary,
-                        ),
-                    )
-                }
+                TextButton(onClick = actions.hideAll, enabled = selectedCount > 0) { Text("Deselect") }
             }
             // Sources grouped by the topic they cover (social platforms last), each group in its
             // topic's colour. Chips wrap so the whole list is visible at once (scrolling only if a

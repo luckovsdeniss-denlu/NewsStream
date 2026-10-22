@@ -119,11 +119,6 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
         if (visible) loadIfMissing(listOf(name))
     }
 
-    fun showAllSources() {
-        setHidden(emptySet())
-        loadIfMissing(visibleSourceNames())
-    }
-
     fun hideAllSources() = setHidden(_state.value.sources.map { it.name }.toSet())
 
     /** Folds or unfolds a group in the sources sheet and saves the choice right away. */
@@ -136,12 +131,6 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     fun setViewSize(size: ViewSize) {
         preferences.viewSize = size.name
         _state.update { it.copy(viewSize = size) }
-    }
-
-    fun showLanguage(language: String?) {
-        val sources = _state.value.sources
-        setHidden(if (language == null) emptySet() else sources.filter { it.language != language }.map { it.name }.toSet())
-        loadIfMissing(visibleSourceNames())
     }
 
     private fun visibleSourceNames() =
