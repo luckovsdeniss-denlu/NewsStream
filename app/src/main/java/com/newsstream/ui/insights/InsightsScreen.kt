@@ -1,6 +1,20 @@
 package com.newsstream.ui.insights
 
 import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.key
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.border
+import com.newsstream.data.Statistics
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.Path
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -72,6 +86,12 @@ fun InsightsScreen(
     val insights = remember(state.articles, state.sources, state.hiddenSources) {
         Insights.compute(state.articles, state.sources, state.hiddenSources)
     }
+    var tab by rememberSaveable { mutableStateOf(InsightsTab.OVERVIEW) }
+    // The statistical tabs are heavier, so they are computed in the background.
+    val stats by produceState<Statistics?>(null, state.articles) {
+        value = null
+        value = withContext(Dispatchers.Default) { Statistics.compute(state.articles) }
+    }
     AppBackground {
         Scaffold(
             containerColor = Color.Transparent,
@@ -104,10 +124,32 @@ fun InsightsScreen(
                 }
                 return@Scaffold
             }
+            Column(Modifier.fillMaxSize().padding(pad)) {
+            TabBar(tab, onSelect = { tab = it })
+            val scroll = key(tab) { rememberScrollState() }
             Column(
-                Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(12.dp),
+                Modifier.fillMaxSize().verticalScroll(scroll).padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                val ready = stats
+                if (tab != InsightsTab.OVERVIEW && ready == null) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Text("Calculating…", style = MaterialTheme.typography.bodyMedium)
+                    }
+                } else if (ready != null && tab == InsightsTab.TRENDS) {
+                    TrendsTab(ready, insights, onTermClick)
+                } else if (ready != null && tab == InsightsTab.STORIES) {
+                    StoriesTab(ready, onArticleClick)
+                } else if (ready != null && tab == InsightsTab.SOURCES) {
+                    SourcesTab(ready)
+                } else if (ready != null && tab == InsightsTab.SOCIAL) {
+                    SocialTab(ready, onArticleClick)
+                } else {
                 Overview(insights)
                 Section("Topics", "Stories per topic") {
                     val total = insights.storyCount
@@ -143,7 +185,41 @@ fun InsightsScreen(
                         },
                     )
                 }
+                }
             }
+            }
+        }
+    }
+}
+
+private enum class InsightsTab(val label: String) {
+    OVERVIEW("Overview"),
+    TRENDS("Trends"),
+    STORIES("Stories"),
+    SOURCES("Sources"),
+    SOCIAL("Social"),
+}
+
+/** One row of tab labels; the selected one is filled. Scrolls sideways on narrow screens. */
+@Composable
+private fun TabBar(selected: InsightsTab, onSelect: (InsightsTab) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        InsightsTab.entries.forEach { tab ->
+            val active = tab == selected
+            Text(
+                tab.label,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
+                    .clickable { onSelect(tab) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+            )
         }
     }
 }
@@ -264,9 +340,14 @@ internal fun BarList(bars: List<Bar>) {
     }
 }
 
-/** 24 hourly columns (oldest left); tap a column to see its count. */
+/**
+ * 24 hourly columns (oldest left); tap a column to see its count. A line over the columns shows
+ * the 3-hour moving average, which smooths out single busy hours.
+ */
 @Composable
 internal fun HourlyColumns(counts: List<Int>) {
+    val average = remember(counts) { Statistics.movingAverage(counts) }
+    val lineColor = MaterialTheme.colorScheme.onSurface
     val max = counts.maxOrNull()?.coerceAtLeast(1) ?: 1
     var selected by remember(counts) { mutableStateOf<Int?>(null) }
     val shown = selected
@@ -280,31 +361,44 @@ internal fun HourlyColumns(counts: List<Int>) {
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurface,
     )
-    Row(
-        Modifier.fillMaxWidth().height(110.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        counts.forEachIndexed { index, count ->
-            // The whole column height is the tap target, not just the bar.
-            Box(
-                Modifier.weight(1f).fillMaxHeight().clickable { selected = if (selected == index) null else index },
-                contentAlignment = Alignment.BottomCenter,
-            ) {
+    Box(Modifier.fillMaxWidth().height(110.dp)) {
+        Row(
+            Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            counts.forEachIndexed { index, count ->
+                // The whole column height is the tap target, not just the bar.
                 Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight((count.toFloat() / max).coerceAtLeast(if (count > 0) 0.03f else 0f))
-                        .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                        .background(
-                            if (selected == null || selected == index) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-                            },
-                        ),
-                )
+                    Modifier.weight(1f).fillMaxHeight().clickable { selected = if (selected == index) null else index },
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight((count.toFloat() / max).coerceAtLeast(if (count > 0) 0.03f else 0f))
+                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                            .background(
+                                if (selected == null || selected == index) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                                },
+                            ),
+                    )
+                }
             }
+        }
+        Canvas(Modifier.matchParentSize()) {
+            val gap = 2.dp.toPx()
+            val column = (size.width - gap * 23) / 24
+            val path = Path()
+            average.forEachIndexed { i, value ->
+                val x = i * (column + gap) + column / 2
+                val y = size.height * (1f - value / max)
+                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            drawPath(path, lineColor, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
         }
     }
     Row(Modifier.fillMaxWidth()) {
@@ -314,6 +408,11 @@ internal fun HourlyColumns(counts: List<Int>) {
         Spacer(Modifier.weight(1f))
         Text("now", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+    Text(
+        "Bars: stories per hour · line: 3-hour moving average",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

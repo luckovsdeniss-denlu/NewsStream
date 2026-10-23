@@ -26,6 +26,20 @@ The page also shows its momentum (rising or fading), how fast sources picked it 
 appears in, a rough positive/negative tone, news vs social split with engagement totals, a strip of
 its pictures and stories that mention it only in the text.
 
+Insights has five tabs. **Overview** is the summary above. The other four are statistical analyses,
+computed in the background:
+- **Trends**: bursting words (z-score of the last 3 hours against the 21 before), the 24-hour chart
+  with a 3-hour moving average, rising and fading words (rate change, last 6 h vs the 18 h before),
+  significantly new words (log-likelihood G², p < 0.01) and word pairs (normalised PMI).
+- **Stories**: near-duplicate headlines grouped into stories (Jaccard similarity, union-find), topic
+  and story diversity (Shannon evenness), the biggest story's share and the most exclusive sources.
+- **Sources**: each source's and topic's distinctive words (TF-IDF), the most alike and most
+  independent sources (cosine similarity), the fastest sources (median delay behind the first
+  report) and tone by topic and source with 95% margins.
+- **Social**: posts ranked within their own platform, median engagement by topic and time of day,
+  and the Spearman correlation between a post's age and its engagement.
+Word pages also show the word's burst score and its tone's margin of error.
+
 ## News sources
 Configured in `data/NewsRepository.kt`:
 - **The Guardian** Content API (full article text). Uses the public `test` key by default, which is

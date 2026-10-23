@@ -137,6 +137,19 @@ fun TermScreen(
                             "${m.earlier} in the 18 hours before (${perHour(m.earlierPerHour)})",
                         style = MaterialTheme.typography.bodySmall,
                     )
+                    analysis.burstZ?.let { z ->
+                        Text(
+                            "Burst score: z = ${String.format(Locale.US, "%.1f", z)} for the last 3 hours " +
+                                when {
+                                    z >= 3f -> "(a strong burst)"
+                                    z >= 2f -> "(unusually high)"
+                                    z <= -1f -> "(below normal)"
+                                    else -> "(within the normal range)"
+                                },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
                 analysis.firstSeen?.let { first ->
                     Section("First reported", "The earliest loaded headline with “$term”") {
@@ -202,6 +215,12 @@ fun TermScreen(
                             Bar("Neutral", tone.neutral, "${tone.neutral} · ${percent(tone.neutral, n)}"),
                             Bar("Negative", tone.negative, "${tone.negative} · ${percent(tone.negative, n)}"),
                         ),
+                    )
+                    val net = (tone.net * 100).toInt()
+                    Text(
+                        "Net tone ${if (net > 0) "+" else ""}$net% ± ${(tone.margin * 100).toInt()} (95% margin)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 if (analysis.kinds.size > 1) {
@@ -288,7 +307,7 @@ fun TermScreen(
 private fun perHour(rate: Float) = String.format(Locale.US, "%.1f/h", rate)
 
 /** 45 min, 3 h 10 min, 2 d 4 h. */
-private fun duration(ms: Long): String {
+internal fun duration(ms: Long): String {
     val minutes = ms / 60_000
     return when {
         minutes < 60 -> "$minutes min"
@@ -305,7 +324,7 @@ private fun kindName(kind: ContentKind) = when (kind) {
 
 /** A headline with how long ago it was published; tap to open it. */
 @Composable
-private fun StoryRow(story: Article, showSource: Boolean = false, onClick: () -> Unit) {
+internal fun StoryRow(story: Article, showSource: Boolean = false, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick).padding(vertical = 4.dp),
         verticalAlignment = Alignment.Top,

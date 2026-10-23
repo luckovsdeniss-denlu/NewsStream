@@ -30,6 +30,8 @@ data class TermAnalysis(
     val tone: Tone,
     /** Matching stories that have a picture, newest first. */
     val withImages: List<Article>,
+    /** How unusual the last 3 hours are for this term (z-score); null with nothing recent. */
+    val burstZ: Float?,
 ) {
     val firstSeen: Article? get() = stories.firstOrNull { it.publishedAt > 0 }
     val latest: Article? get() = stories.lastOrNull { it.publishedAt > 0 }
@@ -46,15 +48,19 @@ data class TermAnalysis(
 
     data class EngagementTotals(val posts: Int, val likes: Int, val comments: Int, val shares: Int, val top: Article)
 
-    data class Tone(val positive: Int, val neutral: Int, val negative: Int)
+    data class Tone(val positive: Int, val neutral: Int, val negative: Int) {
+        private val n: Int get() = positive + neutral + negative
+
+        /** Positive minus negative share of stories, -1 to 1. */
+        val net: Float get() = if (n == 0) 0f else (positive - negative).toFloat() / n
+
+        /** 95% margin of error of [net]. */
+        val margin: Float get() = if (n == 0) 0f else
+            (1.96 * kotlin.math.sqrt(maxOf((positive + negative).toFloat() / n - net * net, 0f) / n.toDouble())).toFloat()
+    }
 
     companion object {
         private const val HOUR = 3_600_000L
-        private val WORD = Regex("\\p{L}+")
-
-        /** Short stems (4 letters or fewer) must match the whole word, so "war" doesn't hit "warm". */
-        private fun matchesStem(word: String, stems: List<String>) =
-            stems.any { if (it.length <= 4) word == it else word.startsWith(it) }
 
         fun compute(
             articles: List<Article>,
@@ -125,8 +131,7 @@ data class TermAnalysis(
             var positive = 0
             var negative = 0
             for (story in stories) {
-                val words = WORD.findAll((story.title + " " + story.summary).lowercase()).map { it.value }.toList()
-                val score = words.count { matchesStem(it, POSITIVE) } - words.count { matchesStem(it, NEGATIVE) }
+                val score = ToneLexicon.score(story)
                 if (score > 0) positive++ else if (score < 0) negative++
             }
 
@@ -149,27 +154,8 @@ data class TermAnalysis(
                 engagement = engagement,
                 tone = Tone(positive, stories.size - positive - negative, negative),
                 withImages = stories.filter { it.gridImageUrl != null }.reversed(),
+                burstZ = Statistics.burstScore(stories.map { it.publishedAt }, now),
             )
         }
-
-        /** Word stems that usually signal good news (English and Russian). Matched as prefixes. */
-        private val POSITIVE = listOf(
-            "win", "wins", "won", "success", "record", "boost", "growth", "grow", "gain", "rise", "rally",
-            "improv", "breakthrough", "agree", "deal", "peace", "recover", "celebrat", "launch", "approv",
-            "save", "saved", "hope", "best", "award", "help", "rescue", "advance", "surge", "strong",
-            "побед", "успех", "успеш", "рекорд", "рост", "вырос", "улучш", "прорыв", "соглаш",
-            "восстанов", "запуст", "одобр", "спас", "помог", "наград", "лучш", "открыт", "развит",
-        )
-
-        /** Word stems that usually signal bad news (English and Russian). Matched as prefixes. */
-        private val NEGATIVE = listOf(
-            "kill", "kills", "killed", "dead", "death", "dies", "died", "war", "wars", "attack", "crash", "crisis", "fall", "falls", "fell",
-            "drop", "drops", "loss", "lose", "lost", "fail", "fear", "threat", "warn", "ban", "fire", "flood",
-            "storm", "strike", "protest", "scandal", "fraud", "arrest", "charged", "sued", "lawsuit",
-            "cut", "cuts", "layoff", "collapse", "decline", "injur", "victim", "shoot", "bomb", "sanction",
-            "убит", "погиб", "смерт", "войн", "атак", "удар", "крах", "кризис", "паден", "упал", "сниж",
-            "потер", "угроз", "запрет", "пожар", "наводн", "авари", "катастроф", "скандал", "мошен",
-            "арест", "задерж", "обвин", "санкц", "протест", "взрыв", "ранен", "жертв",
-        )
     }
 }
