@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Insights
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -166,7 +165,6 @@ fun HomeScreen(
                 FilterBar(
                     mode = mode,
                     onModeSelected = { mode = it },
-                    onRandomSources = pickRandomSources,
                 )
                 if (mode == Mode.YOUTUBE) {
                     YouTubeFeed(
@@ -240,12 +238,11 @@ fun HomeScreen(
     }
 }
 
-/** One compact row: the News / Images / YouTube / Saved switch, plus the random-sources button in News. */
+/** One compact row: the News / Images / YouTube / Saved switch. */
 @Composable
 private fun FilterBar(
     mode: Mode,
     onModeSelected: (Mode) -> Unit,
-    onRandomSources: () -> Unit,
 ) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
@@ -253,27 +250,6 @@ private fun FilterBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ModeSwitch(mode, onModeSelected, Modifier.weight(1f))
-        if (mode == Mode.NEWS) RandomSourcesButton(onRandomSources)
-    }
-}
-
-/** Picks 5 random news sources in place of the current ones. */
-@Composable
-private fun RandomSourcesButton(onClick: () -> Unit) {
-    Box(
-        Modifier
-            .size(48.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            Icons.Filled.Shuffle,
-            contentDescription = "Pick 5 random news sources",
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp),
-        )
     }
 }
 

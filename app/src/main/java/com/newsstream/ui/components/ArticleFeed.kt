@@ -223,6 +223,9 @@ fun ArticleCard(
         CardHeader(article, accent, showTopic, topicSelected, onTopicClick, saved, onToggleSave)
     }
     val base = modifier.fillMaxWidth().panel(accent).clickable(onClick = onClick)
+    // Every size fills its card: the headline first, then as much of the story's text as fits
+    // (opening paragraphs when the source gives full text, otherwise the summary).
+    val text = remember(article) { cardText(article) }
     when (size) {
         ViewSize.FULL, ViewSize.HALF -> Column(base) {
             val full = size == ViewSize.FULL
@@ -235,13 +238,13 @@ fun ArticleCard(
                     contentDescription = article.title,
                     contentScale = ContentScale.Crop,
                     // Full size gives the text most of the card: the photo takes 45% of its height.
-                    modifier = Modifier.fillMaxWidth().weight(if (full) 0.45f else 1f),
+                    modifier = Modifier.fillMaxWidth().weight(0.45f),
                 )
             }
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .then(if (image == null || full) Modifier.weight(if (full && image != null) 0.55f else 1f) else Modifier)
+                    .weight(if (image != null) 0.55f else 1f)
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -249,71 +252,75 @@ fun ArticleCard(
                 Text(
                     article.title,
                     style = if (full) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
-                    maxLines = if (image == null) 8 else if (full) 4 else 3,
+                    maxLines = if (text.isEmpty()) 8 else 4,
                     overflow = TextOverflow.Ellipsis,
                 )
-                // Full size shows as much text as fits: the article's opening paragraphs when the
-                // source provides full text, otherwise the summary.
-                val text = if (full && article.body.isNotEmpty()) article.body.joinToString("\n\n") else article.summary
-                if (text.isNotBlank()) {
+                if (text.isNotEmpty()) {
                     Text(
                         text,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = when {
-                            full -> Int.MAX_VALUE
-                            image == null -> 12
-                            else -> 2
-                        },
                         overflow = TextOverflow.Ellipsis,
-                        modifier = if (full) Modifier.weight(1f, fill = false) else Modifier,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
                 }
-                if (full) article.engagement?.let { EngagementRow(it) }
+                article.engagement?.let { EngagementRow(it) }
             }
         }
-        ViewSize.THIRD -> Row(base.padding(10.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                header()
+        ViewSize.THIRD -> Column(base.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            header()
+            Text(
+                article.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = if (text.isEmpty()) 6 else 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (text.isNotEmpty()) {
                 Text(
-                    article.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 3,
+                    text,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
-                if (article.summary.isNotBlank()) {
-                    Text(
-                        article.summary,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
             }
+            article.engagement?.let { EngagementRow(it) }
         }
-        // Compact: source line and headline.
-        ViewSize.FIFTH -> Row(
-            base.padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // Compact: source line, headline and the start of the text.
+        ViewSize.FIFTH -> Column(
+            base.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Column(
-                Modifier.weight(1f).padding(start = 6.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
-            ) {
-                header()
+            header()
+            Text(
+                article.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (social && article.summary.isEmpty()) FontWeight.Normal else FontWeight.SemiBold,
+                maxLines = if (text.isEmpty()) 4 else 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (text.isNotEmpty()) {
                 Text(
-                    article.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (social && article.summary.isEmpty()) FontWeight.Normal else FontWeight.SemiBold,
-                    maxLines = 3,
+                    text,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
             }
         }
     }
+}
+
+/**
+ * The text shown under a card's headline: the full text when the source provides it, else the
+ * summary; empty when it would only repeat the headline (e.g. a social post without a title).
+ */
+private fun cardText(article: Article): String {
+    val text = (if (article.body.isNotEmpty()) article.body.joinToString("\n\n") else article.summary).trim()
+    val title = article.title.trim()
+    return if (text.isEmpty() || text == title || title.startsWith(text) || text.startsWith(title) && text.length < title.length + 20) "" else text
 }
 
 /** Topic icon, source and time on one line, with the bookmark at the end. */
