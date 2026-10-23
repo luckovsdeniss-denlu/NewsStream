@@ -48,12 +48,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.newsstream.data.Article
 import com.newsstream.data.ContentKind
 import com.newsstream.data.Topic
 import com.newsstream.ui.EngagementRow
 import com.newsstream.ui.byline
+import com.newsstream.ui.color
 import com.newsstream.ui.icon
 import com.newsstream.ui.timeAgo
 import com.newsstream.ui.theme.panel
@@ -245,7 +247,7 @@ fun ArticleCard(
                 Modifier
                     .fillMaxWidth()
                     .weight(if (image != null) 0.55f else 1f)
-                    .padding(12.dp),
+                    .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 header()
@@ -267,7 +269,10 @@ fun ArticleCard(
                 article.engagement?.let { EngagementRow(it) }
             }
         }
-        ViewSize.THIRD -> Column(base.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        ViewSize.THIRD -> Column(
+            base.padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             header()
             Text(
                 article.title,
@@ -289,7 +294,7 @@ fun ArticleCard(
         }
         // Compact: source line, headline and the start of the text.
         ViewSize.FIFTH -> Column(
-            base.padding(horizontal = 12.dp, vertical = 6.dp),
+            base.padding(start = 12.dp, end = 12.dp, top = 5.dp, bottom = 6.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             header()
@@ -323,7 +328,10 @@ private fun cardText(article: Article): String {
     return if (text.isEmpty() || text == title || title.startsWith(text) || text.startsWith(title) && text.length < title.length + 20) "" else text
 }
 
-/** Topic icon, source and time on one line, with the bookmark at the end. */
+/**
+ * The card's first line, right at its top: topic (icon and name in the topic's colour), source and
+ * how long ago, with the bookmark at the end.
+ */
 @Composable
 private fun CardHeader(
     article: Article,
@@ -334,19 +342,26 @@ private fun CardHeader(
     saved: Boolean,
     onToggleSave: (() -> Unit)?,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         if (showTopic) {
-            Icon(
-                article.topic.icon,
-                contentDescription = article.topic.label,
-                tint = if (topicSelected) MaterialTheme.colorScheme.onPrimaryContainer else accent,
-                modifier = Modifier
+            val topicColor = article.topic.color
+            Row(
+                Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(if (topicSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                    .then(if (onTopicClick != null) Modifier.clickable { onTopicClick(article.topic) } else Modifier)
-                    .padding(1.dp)
-                    .size(14.dp),
-            )
+                    .background(if (topicSelected) topicColor.copy(alpha = 0.25f) else Color.Transparent)
+                    .then(if (onTopicClick != null) Modifier.clickable { onTopicClick(article.topic) } else Modifier),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Icon(article.topic.icon, contentDescription = null, tint = topicColor, modifier = Modifier.size(13.dp))
+                Text(
+                    article.topic.label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = topicColor,
+                    maxLines = 1,
+                )
+            }
+            Text("·", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Text(
             article.byline().uppercase(),
@@ -357,9 +372,14 @@ private fun CardHeader(
             modifier = Modifier.weight(1f),
         )
         article.timeAgo()?.let {
-            Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                it,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
         }
-        if (onToggleSave != null) SaveButton(saved, onToggleSave, Modifier.padding(start = 2.dp))
+        if (onToggleSave != null) SaveButton(saved, onToggleSave, iconSize = 18.dp)
     }
 }
 
@@ -383,7 +403,7 @@ fun TopicTag(topic: Topic, selected: Boolean = false, onClick: ((Topic) -> Unit)
 
 /** Bookmark toggle: filled when the story is saved. */
 @Composable
-fun SaveButton(saved: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+fun SaveButton(saved: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier, iconSize: Dp = 22.dp) {
     Icon(
         if (saved) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
         contentDescription = if (saved) "Remove from saved" else "Save",
@@ -391,7 +411,7 @@ fun SaveButton(saved: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifi
         modifier = modifier
             .clip(RoundedCornerShape(6.dp))
             .clickable(onClick = onToggle)
-            .padding(2.dp)
-            .size(22.dp),
+            .padding(1.dp)
+            .size(iconSize),
     )
 }
