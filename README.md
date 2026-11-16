@@ -1,108 +1,110 @@
-# NewsStream
+<div align="center">
 
-Android app skeleton (Kotlin, Jetpack Compose, Material 3).
+# 🌊 NewsStream
 
-The home screen shows live headlines and social posts merged from many sources, newest first, with a News / Images / YouTube / Saved switch. When no sources are selected, the News screen offers "Random 5 sources" to start with 5 random news sources. Images shows a grid of the pictures attached to
-the loaded stories; thumbnails are prefetched as each source arrives and cached in memory and on
-disk, so the grid appears instantly. Bookmark any story to keep it in Saved (stored on the device, available offline). Tap a story to read it; SHOW IMAGE loads its picture on demand. The sources button in the top bar picks which sources to show
-(none are selected at first; choices are saved across restarts and apply to every screen). Stories are grouped into World, Politics,
-Business, Technology, Science, Climate, Health, Sports, Culture and General (`data/Topic.kt`: source sections and
-feed categories first, then headline keywords, then each source's default topic).
+**The whole world's news in one stream, and the statistics to make sense of it.**
 
-## Loading
-Nothing is fetched at launch: the app opens empty and loads news when you tap Load news or refresh.
-Sources are fetched at most 10 at a time and each one appears as soon as it arrives (the header shows
-progress). The feed renders 30 compact stories at a time and adds the next 30 as you scroll. Switched-off sources
-are not downloaded.
+200+ news sites, social feeds and YouTube channels in English and Russian, merged into one live
+feed, with on-device analytics that show what's trending, who reported it first and how outlets differ.
 
-## Insights
+![Kotlin](https://img.shields.io/badge/Kotlin-1.9-7F52FF?logo=kotlin&logoColor=white)
+![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
+![Android](https://img.shields.io/badge/Android-7.0%2B%20(API%2024)-3DDC84?logo=android&logoColor=white)
+![Sources](https://img.shields.io/badge/sources-200%2B-0B2347)
+![Languages](https://img.shields.io/badge/languages-EN%20%7C%20RU-1E88E5)
+![No tracking](https://img.shields.io/badge/analytics-100%25%20on--device-00897B)
 
-The chart icon in the top bar opens an on-device analysis of everything loaded (videos excluded):
-overview totals, stories per topic and per source, big stories covered by several outlets, trending
-words, a 24-hour publishing timeline, the most-engaged social posts and the language mix.
-Tap a trending word or big story to analyse it: which sources cover it (with all their stories),
-who reported it first, its topics, its last 24 hours and related words (tap one to follow it).
-The page also shows its momentum (rising or fading), how fast sources picked it up, the phrases it
-appears in, a rough positive/negative tone, news vs social split with engagement totals, a strip of
-its pictures and stories that mention it only in the text.
+</div>
 
-Insights has five tabs. **Overview** is the summary above. The other four are statistical analyses,
-computed in the background:
-- **Trends**: bursting words (z-score of the last 3 hours against the 21 before), the 24-hour chart
-  with a 3-hour moving average, rising and fading words (rate change, last 6 h vs the 18 h before),
-  significantly new words (log-likelihood G², p < 0.01) and word pairs (normalised PMI).
-- **Stories**: near-duplicate headlines grouped into stories (Jaccard similarity, union-find), topic
-  and story diversity (Shannon evenness), the biggest story's share and the most exclusive sources.
-- **Sources**: each source's and topic's distinctive words (TF-IDF), the most alike and most
-  independent sources (cosine similarity), the fastest sources (median delay behind the first
-  report) and tone by topic and source with 95% margins.
-- **Social**: posts ranked within their own platform, median engagement by topic and time of day,
-  and the Spearman correlation between a post's age and its engagement.
-Word pages also show the word's burst score and its tone's margin of error.
+---
 
-## News sources
-Configured in `data/NewsRepository.kt`:
-- **The Guardian** Content API (full article text). Uses the public `test` key by default, which is
-  rate-limited. For a real key, register at https://open-platform.theguardian.com/access/ and add it as the
-  `GUARDIAN_API_KEY` repository secret (CI) or Gradle property (local builds).
-- RSS/Atom feeds (headline + summary, link to the full story), no key needed:
-  - World: BBC News, NPR, Al Jazeera, The New York Times, Sky News, Deutsche Welle, France 24, CBS News,
-    The Independent, Euronews, UN News, South China Morning Post, Times of India, The Japan Times,
-    ABC News (Australia), Google News
-  - Politics: Politico, The Hill
-  - Business: CNBC, The Economist, Fortune
-  - Technology: Ars Technica, TechCrunch, The Verge, Wired, MIT Technology Review, Engadget, The Register,
-    Tom's Hardware, ZDNet, VentureBeat, Popular Science
-  - Science: NASA, ScienceDaily, New Scientist, Space.com, Phys.org, Nature, Science (AAAS), Scientific American,
-    Live Science, Universe Today
-  - Climate: Carbon Brief, Inside Climate News
-  - Health: WHO, STAT News
-  - Sports: ESPN, BBC Sport, Sky Sports
-  - Culture: Variety, Rolling Stone
-- **GNews.io** (optional, needs a free key): top headlines in 8 categories, with images. Add the key as the
-  `GNEWS_API_KEY` repository secret. The free plan allows ~100 requests/day, so each category is a separate
-  source (switch off the ones you don't need) and responses are cached on the device for 30 minutes.
-- In-depth (RSS, no key): ProPublica, Bellingcat, The Conversation, Our World in Data, Visual Capitalist,
-  Quanta Magazine, IEEE Spectrum, NASA Earth Observatory, Aeon, Smithsonian Magazine, Atlas Obscura, the
-  fact-checkers PolitiFact, Snopes and Full Fact, N+1 (Russian science), and Wikipedia's daily "In the news" items
-  and featured article (REST API, no key).
-- YouTube (tab of its own, public channel feeds, no key): BBC News, Al Jazeera English, DW News, FRANCE 24,
-  Sky News, Reuters, AP, CNN, NBC, ABC, CBS, Bloomberg TV, CNBC, The Verge, Marques Brownlee, Linus Tech Tips,
-  NASA, Veritasium, Kurzgesagt, TED, Vox, The Guardian, WHO, ESPN, Дождь, Настоящее время — grouped by channel
-  type. YouTube's "Posts" (community) have no official API, so only videos are shown.
-  Videos play inside the app with YouTube's embedded player (fullscreen turns to landscape), with
-  the description and an up-next list; channels that block embedding can be opened in YouTube.
-- Russian-language news (RSS, no key): BBC Русская служба, DW на русском, Euronews на русском, Meduza,
-  Новая газета Европа, The Insider, РБК, Коммерсантъ, Ведомости, Интерфакс, ТАСС, РИА Новости, Лента.ру,
-  Фонтанка, Хабр, Google Новости; plus GNews Russian headlines when a GNews key is set. Topic keywords cover
-  Russian too.
-- Social (posts with author and likes/comments/shares), no key needed:
-  - Reddit (r/worldnews, r/news, r/technology). Reddit blocks anonymous API access, so by default these use the
-    public subreddit feeds (headlines only). For scores and comment counts, create an "installed app" at
-    https://www.reddit.com/prefs/apps and add its client ID as the `REDDIT_CLIENT_ID` repository secret.
-  - Hacker News front page via the Algolia HN API
-  - Lobsters (lobste.rs) hottest stories
-  - Lemmy (lemmy.world) hot posts via its public API
-  - Mastodon trending posts and trending news links (mastodon.social)
-  - Bluesky "Discover" feed via the public AppView API
+## ✨ Highlights
 
-- Telegram public channels via their web preview (t.me/s/…, no key): Meduza, Дождь, Медиазона, Настоящее время,
-  BBC Русская служба, РБК, Коммерсантъ, Интерфакс, ТАСС, РИА Новости, NEXTA.
-- VK public pages via the official API (needs a free service token as the `VK_SERVICE_TOKEN` secret): РИА Новости,
-  РБК, Лента.ру, Коммерсантъ, ТАСС.
+| | |
+|---|---|
+| 📰 **One stream, many voices** | World news, politics, business, tech, science, climate, health, sports and culture: newest first, sorted into topics automatically. |
+| 📊 **Insights** | 13 statistical analyses on everything you've loaded: bursts, trends, story clusters, source similarity, tone with margins of error and more. |
+| 🔎 **Word deep-dives** | Tap any trending word to see who covers it, who had it first, how fast it spread, its momentum, tone, phrases and pictures. |
+| 🖼️ **Images** | Every story's picture in a grid, prefetched and cached so it appears instantly. |
+| ▶️ **YouTube** | 26 news and science channels in coloured groups, played right inside the app. |
+| 💬 **Social** | Reddit, Hacker News, Lobsters, Lemmy, Mastodon, Bluesky, Telegram and VK, with likes, comments and shares. |
+| 🔖 **Saved** | Bookmark anything; kept on the device and readable offline. |
+| 📐 **Four sizes** | One story per screen, or 2, 3 or 5 per screen. Every size fills the card with as much text as fits. |
+| 🎲 **Random 5** | Not sure where to start? Get 5 random news sources in one tap. |
+| 🌙 **Deep Ocean theme** | A dark navy design with colour-coded topics. |
 
-X/Twitter, Instagram and Facebook are not included: their APIs require paid or approved access.
+## 📊 Insights
 
-Add a source by implementing `NewsSource` (or adding another `RssNewsSource` for any RSS 2.0, RSS 1.0 or Atom feed) and listing it in `NewsRepository`.
+Tap the chart icon in the top bar. Everything is computed **on the phone**: no server, no account, no tracking.
 
-## Build
-CI builds a debug APK on request: Actions → Build APK → Run workflow (see `.github/workflows/build-apk.yml`).
-Locally: open in Android Studio, or run `gradle :app:assembleDebug`.
+| Tab | What it shows | Methods |
+|---|---|---|
+| **Overview** | Totals, stories per topic and source, big stories, trending words, a 24-hour timeline, most-engaged posts, languages | Counts, cross-source ranking |
+| **Trends** | Words bursting right now, what's rising and fading, words that are new this period, words that travel together | z-score, 3-hour moving average, growth rate, log-likelihood G² (p < 0.01), normalised PMI |
+| **Stories** | The same story told by many outlets, how evenly the news is spread, the biggest story's share, most exclusive sources | Jaccard similarity + union-find clustering, Shannon evenness |
+| **Sources** | Each outlet's and topic's signature words, the most alike and most independent sources, the fastest reporters, tone by topic and source | TF-IDF, cosine similarity, median pickup delay, net tone ± 95% margin |
+| **Social** | The best post on each platform, engagement by topic and time of day, whether older posts gather more | Within-platform ranks, medians, Spearman ρ |
 
-## Versioning
-Every CI build gets a new version automatically: it builds `versionName = 0.1.<run number>` and
-`versionCode = <run number>`, and uploads `NewsStream-0.1.<run number>.apk`. To bump major/minor, change
-`baseVersion` in `app/build.gradle.kts` and the `0.1` prefix in the workflow.
+Every trending word, big story and phrase opens a **word page** with its momentum and burst score, the
+order in which sources picked it up, coverage by source and topic, related words, tone, social
+engagement, a picture strip, and every matching story grouped by source.
 
-## Roadmap
-- Images, favourites, offline caching
+## 🗞️ Sources
+
+No key is needed for almost everything. All sources start switched off; pick yours in the sources sheet,
+which is grouped by topic, with World split into regions.
+
+- **World**: Reuters, AP, BBC, The Guardian, Al Jazeera, NYT, DW, France 24, Euronews, Financial Times, UN News, SCMP, The Japan Times, Kyiv Independent, The Moscow Times and more
+- **Topics**: Politico, The Economist, CNBC, Ars Technica, The Verge, Wired, Nature, NASA, New Scientist, Carbon Brief, STAT News, ESPN, Variety…
+- **In-depth & fact-checking**: ProPublica, Bellingcat, The Conversation, Our World in Data, Quanta, IEEE Spectrum, Aeon, PolitiFact, Snopes, Full Fact, Wikipedia
+- **На русском**: BBC Русская служба, DW, Meduza, Новая газета Европа, The Insider, РБК, Коммерсантъ, Ведомости, Интерфакс, ТАСС, РИА Новости, Хабр, N+1…
+- **Social**: Reddit, Hacker News, Lobsters, Lemmy, Mastodon, Bluesky, 11 Telegram channels, VK pages
+- **YouTube**: BBC, Al Jazeera, DW, Reuters, Bloomberg, CNN, NASA, Veritasium, Kurzgesagt, TED, Vox, MKBHD and more
+- **Optional APIs**: GNews.io headlines in 8 categories plus Russian, and The Guardian's full-text API
+
+Add your own by listing an `RssNewsSource` (RSS 2.0, RSS 1.0 or Atom) or implementing `NewsSource` in
+[`data/NewsRepository.kt`](app/src/main/java/com/newsstream/data/NewsRepository.kt).
+
+X/Twitter, Instagram and Facebook aren't included: their APIs need paid or approved access.
+
+## ⚡ Fast by design
+
+- Nothing loads at launch; news loads when you ask for it, and videos only when you open YouTube.
+- Up to 10 sources are fetched at once, and each one appears the moment it arrives.
+- The feed renders 30 stories at a time; images are sized to the view and prefetched ahead of scrolling.
+- Heavy statistics run on a background thread.
+
+## 🔑 Optional keys
+
+Add these as GitHub repository secrets (or Gradle properties for local builds). Everything works without them.
+
+| Secret | Unlocks |
+|---|---|
+| `GUARDIAN_API_KEY` | The Guardian's full article text without the shared test key's rate limit ([get a key](https://open-platform.theguardian.com/access/)) |
+| `GNEWS_API_KEY` | GNews.io headlines in 8 categories plus Russian (free plan, responses cached for 30 minutes) |
+| `REDDIT_CLIENT_ID` | Reddit scores and comment counts (an "installed app" from reddit.com/prefs/apps) |
+| `VK_SERVICE_TOKEN` | VK public pages (a free service token) |
+
+## 🛠️ Build
+
+```bash
+gradle :app:assembleDebug        # or open the project in Android Studio
+```
+
+CI builds a debug APK on request: **Actions → Build APK → Run workflow**. Each build is versioned
+`0.1.<run number>` and uploaded as `NewsStream-0.1.<run number>.apk`.
+
+**Stack:** Kotlin · Jetpack Compose · Material 3 · Coroutines · Coil · `HttpURLConnection`, `XmlPullParser`
+and `org.json` for networking and parsing. No other dependencies.
+
+## 🗂️ Project layout
+
+```
+app/src/main/java/com/newsstream/
+├── data/            Article model, topics, repository, saved stories, preferences
+│   ├── source/      One class per source type: RSS, Guardian, GNews, Reddit, Mastodon, YouTube, Telegram…
+│   ├── Insights.kt  Overview numbers
+│   ├── Statistics.kt  The statistical analyses
+│   └── TermAnalysis.kt  Word deep-dives
+└── ui/              Compose screens: home, article, images, YouTube player, insights, theme
+```
