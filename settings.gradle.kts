@@ -4,5 +4,5 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
-rootProject.name = "NewsStream"
+rootProject.name = "NewsPlatform"
 include(":app")

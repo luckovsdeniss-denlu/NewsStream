@@ -112,7 +112,7 @@ fun HomeScreen(
                 TopAppBar(
                     title = {
                         Column {
-                            Text("NEWSSTREAM", color = MaterialTheme.colorScheme.primary)
+                            Text("NEWSPLATFORM", color = MaterialTheme.colorScheme.primary)
                             Text(
                                 buildString {
                                     append("LIVE · ")

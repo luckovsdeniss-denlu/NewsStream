@@ -5,7 +5,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.Charset
 
-private const val DEFAULT_USER_AGENT = "NewsStream/1.0 (Android)"
+private const val DEFAULT_USER_AGENT = "NewsPlatform/1.0 (Android)"
 
 internal fun httpGet(url: String, headers: Map<String, String> = emptyMap()): String =
     request(url, "GET", headers, body = null).text()

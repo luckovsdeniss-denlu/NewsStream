@@ -6,7 +6,7 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 
-class NewsStreamApp : Application(), ImageLoaderFactory {
+class NewsPlatformApp : Application(), ImageLoaderFactory {
     /**
      * One shared image loader for the whole app: a large memory cache so images already on
      * screen or prefetched appear instantly, and a disk cache that survives restarts. Feed

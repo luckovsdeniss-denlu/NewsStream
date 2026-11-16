@@ -17,13 +17,13 @@ import com.newsstream.ui.home.HomeScreen
 import com.newsstream.ui.insights.InsightsScreen
 import com.newsstream.ui.insights.TermScreen
 import com.newsstream.ui.youtube.VideoPlayerScreen
-import com.newsstream.ui.theme.NewsStreamTheme
+import com.newsstream.ui.theme.NewsPlatformTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            NewsStreamTheme {
+            NewsPlatformTheme {
                 val newsViewModel: NewsViewModel = viewModel()
                 val state by newsViewModel.state.collectAsStateWithLifecycle()
                 var openArticleId by rememberSaveable { mutableStateOf<String?>(null) }

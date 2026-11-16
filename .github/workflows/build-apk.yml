@@ -24,8 +24,8 @@ jobs:
           GNEWS_API_KEY: ${{ secrets.GNEWS_API_KEY }}
           VK_SERVICE_TOKEN: ${{ secrets.VK_SERVICE_TOKEN }}
       - name: Name APK with version
-        run: cp app/build/outputs/apk/debug/app-debug.apk NewsStream-0.1.${{ github.run_number }}.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk NewsPlatform-0.1.${{ github.run_number }}.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: NewsStream-0.1.${{ github.run_number }}
-          path: NewsStream-0.1.${{ github.run_number }}.apk
+          name: NewsPlatform-0.1.${{ github.run_number }}
+          path: NewsPlatform-0.1.${{ github.run_number }}.apk

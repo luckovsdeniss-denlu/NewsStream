@@ -72,7 +72,7 @@ class RedditSource(
 
     private companion object {
         // Reddit asks API clients for a unique, descriptive User-Agent.
-        val REDDIT_HEADERS = mapOf("User-Agent" to "android:com.newsstream:v1.0 (NewsStream news reader)")
+        val REDDIT_HEADERS = mapOf("User-Agent" to "android:com.newsstream:v1.0 (NewsPlatform news reader)")
 
         private var token: String? = null
         private var tokenExpiresAt = 0L

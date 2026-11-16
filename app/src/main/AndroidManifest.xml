@@ -2,11 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:name=".NewsStreamApp"
+        android:name=".NewsPlatformApp"
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.NewsStream">
+        android:theme="@style/Theme.NewsPlatform">
         <!-- Rotation is handled by Compose, so a playing video isn't restarted when the screen turns. -->
         <activity
             android:name=".MainActivity"

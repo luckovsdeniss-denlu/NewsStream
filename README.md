@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌊 NewsStream
+# 🌊 NewsPlatform
 
 **The whole world's news in one stream, and the statistics to make sense of it.**
 
@@ -92,7 +92,7 @@ gradle :app:assembleDebug        # or open the project in Android Studio
 ```
 
 CI builds a debug APK on request: **Actions → Build APK → Run workflow**. Each build is versioned
-`0.1.<run number>` and uploaded as `NewsStream-0.1.<run number>.apk`.
+`0.1.<run number>` and uploaded as `NewsPlatform-0.1.<run number>.apk`.
 
 **Stack:** Kotlin · Jetpack Compose · Material 3 · Coroutines · Coil · `HttpURLConnection`, `XmlPullParser`
 and `org.json` for networking and parsing. No other dependencies.

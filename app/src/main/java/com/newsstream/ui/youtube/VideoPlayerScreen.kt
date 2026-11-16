@@ -249,7 +249,7 @@ private fun YouTubePlayer(videoId: String, onFullscreen: (FullscreenView?) -> Un
                                 }
                             }
                         },
-                        "NewsStreamPlayer",
+                        "NewsPlatformPlayer",
                     )
                     webChromeClient = object : WebChromeClient() {
                         private var callback: CustomViewCallback? = null
@@ -336,8 +336,8 @@ private fun playerHtml(videoId: String, origin: String) = """
           videoId: '$videoId',
           playerVars: { autoplay: 1, playsinline: 1, rel: 0, controls: 1, fs: 1, enablejsapi: 1, origin: '$origin' },
           events: {
-            onReady: function(e) { NewsStreamPlayer.onReady(); e.target.playVideo(); },
-            onError: function(e) { NewsStreamPlayer.onError(e.data); }
+            onReady: function(e) { NewsPlatformPlayer.onReady(); e.target.playVideo(); },
+            onError: function(e) { NewsPlatformPlayer.onError(e.data); }
           }
         });
       }

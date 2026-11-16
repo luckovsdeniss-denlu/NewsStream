@@ -27,7 +27,7 @@ class WikipediaSource(private val lang: String = "en") : NewsSource {
             httpGet(
                 "https://$lang.wikipedia.org/api/rest_v1/feed/featured/$path",
                 // Wikimedia asks API clients to identify themselves.
-                mapOf("Api-User-Agent" to "NewsStream/1.0 (Android news reader)"),
+                mapOf("Api-User-Agent" to "NewsPlatform/1.0 (Android news reader)"),
             ),
         )
         // The feed is per day, without times: date items at the start of the day.

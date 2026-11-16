@@ -75,7 +75,7 @@ private val OceanShapes = Shapes(
 )
 
 @Composable
-fun NewsStreamTheme(content: @Composable () -> Unit) {
+fun NewsPlatformTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = OceanColors, typography = OceanTypography, shapes = OceanShapes) {
         // Default text colour everywhere is blue, never black.
         CompositionLocalProvider(LocalContentColor provides SkyBlue, content = content)
