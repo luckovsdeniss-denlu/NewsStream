@@ -42,6 +42,16 @@ android {
         buildConfigField("String", "GNEWS_API_KEY", "\"$gnewsApiKey\"")
         buildConfigField("String", "VK_SERVICE_TOKEN", "\"$vkServiceToken\"")
     }
+    buildTypes {
+        // The optimised build CI ships: code shrunk and optimised by R8, unused resources removed.
+        // Signed with the debug key so it installs directly from the build download.
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
     buildFeatures {
         compose = true
         buildConfig = true

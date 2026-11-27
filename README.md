@@ -88,10 +88,10 @@ Add these as GitHub repository secrets (or Gradle properties for local builds). 
 ## 🛠️ Build
 
 ```bash
-gradle :app:assembleDebug        # or open the project in Android Studio
+gradle :app:assembleRelease      # optimised build; assembleDebug for development, or use Android Studio
 ```
 
-CI builds a debug APK on request: **Actions → Build APK → Run workflow**. Each build is versioned
+CI builds an optimised release APK (R8-shrunk, debug-signed) on request: **Actions → Build APK → Run workflow**. Each build is versioned
 `0.1.<run number>` and uploaded as `NewsPlatform-0.1.<run number>.apk`.
 
 **Stack:** Kotlin · Jetpack Compose · Material 3 · Coroutines · Coil · `HttpURLConnection`, `XmlPullParser`
