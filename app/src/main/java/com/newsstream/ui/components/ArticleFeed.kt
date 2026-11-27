@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -271,11 +274,10 @@ fun ArticleCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (text.isNotEmpty()) {
-                    Text(
+                    FillText(
                         text,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )
                 }
@@ -295,11 +297,10 @@ fun ArticleCard(
                 overflow = TextOverflow.Ellipsis,
             )
             if (text.isNotEmpty()) {
-                Text(
+                FillText(
                     text,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
             }
@@ -319,14 +320,30 @@ fun ArticleCard(
                 overflow = TextOverflow.Ellipsis,
             )
             if (text.isNotEmpty()) {
-                Text(
+                FillText(
                     text,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
             }
+        }
+    }
+}
+
+/**
+ * Text that fills the space it is given with whole lines only: it works out how many lines fit
+ * and ends the last one with "…", so no line is ever cut in half at the bottom of a card.
+ */
+@Composable
+private fun FillText(text: String, style: TextStyle, color: Color, modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier) {
+        val lineHeight = with(LocalDensity.current) {
+            (if (style.lineHeight.isSp) style.lineHeight else style.fontSize * 1.4f).toPx()
+        }
+        val lines = if (constraints.hasBoundedHeight) (constraints.maxHeight / lineHeight).toInt() else Int.MAX_VALUE
+        if (lines > 0) {
+            Text(text, style = style, color = color, maxLines = lines, overflow = TextOverflow.Ellipsis)
         }
     }
 }
