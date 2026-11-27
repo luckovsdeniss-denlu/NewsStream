@@ -92,7 +92,9 @@ gradle :app:assembleRelease      # optimised build; assembleDebug for developmen
 ```
 
 CI builds an optimised release APK (R8-shrunk, debug-signed) on request: **Actions → Build APK → Run workflow**. Each build is versioned
-`0.1.<run number>` and uploaded as `NewsPlatform-0.1.<run number>.apk`.
+`0.1.<run number>` and published as a **GitHub Release** (`v0.1.<run number>`) with
+`NewsPlatform-0.1.<run number>.apk` attached; the release text comes from `.github/RELEASE_NOTES.md`.
+Get the latest APK from the [Releases](../../releases/latest) page.
 
 **Stack:** Kotlin · Jetpack Compose · Material 3 · Coroutines · Coil · `HttpURLConnection`, `XmlPullParser`
 and `org.json` for networking and parsing. No other dependencies.

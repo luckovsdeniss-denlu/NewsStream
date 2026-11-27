@@ -7,6 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Needed to publish the GitHub Release.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -29,3 +32,11 @@ jobs:
         with:
           name: NewsPlatform-0.1.${{ github.run_number }}
           path: NewsPlatform-0.1.${{ github.run_number }}.apk
+      - name: Publish GitHub Release
+        run: |
+          gh release create "v0.1.${{ github.run_number }}" "NewsPlatform-0.1.${{ github.run_number }}.apk" \
+            --target "${{ github.sha }}" \
+            --title "NewsPlatform 0.1.${{ github.run_number }}" \
+            --notes-file .github/RELEASE_NOTES.md
+        env:
+          GH_TOKEN: ${{ github.token }}
