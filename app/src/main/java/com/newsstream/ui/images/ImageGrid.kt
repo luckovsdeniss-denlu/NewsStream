@@ -88,8 +88,8 @@ fun ImageGrid(
             // Full screen: one whole picture per screen, with its caption.
             withImages.isNotEmpty() && size == ViewSize.FULL -> LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                // Edge to edge: no margin around the pictures, just a hairline between them.
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 items(withImages, key = { it.id }) { article ->
                     FullImage(article, Modifier.fillParentMaxHeight(), onClick = { onArticleClick(article) })
@@ -166,7 +166,7 @@ private fun ImageTile(article: Article, size: ViewSize, onClick: () -> Unit) {
     }
 }
 
-/** One picture filling the screen height, shown whole (not cropped), with source and headline. */
+/** One picture filling the whole screen, edge to edge with no bars, with source and headline. */
 @Composable
 private fun FullImage(article: Article, modifier: Modifier, onClick: () -> Unit) {
     val url = article.imageUrl ?: article.gridImageUrl ?: return
@@ -175,14 +175,14 @@ private fun FullImage(article: Article, modifier: Modifier, onClick: () -> Unit)
     Box(
         modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
             .background(Color.Black)
             .clickable(onClick = onClick),
     ) {
         AsyncImage(
             model = request,
             contentDescription = article.title,
-            contentScale = ContentScale.Fit,
+            // Fills the screen (trimming the edges of pictures with a different shape).
+            contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
         Column(

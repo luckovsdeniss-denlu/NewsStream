@@ -83,10 +83,13 @@ fun NewsPlatformTheme(content: @Composable () -> Unit) {
 }
 
 /** A translucent deep-blue card with a glowing outline in [accent]. */
-fun Modifier.panel(accent: Color): Modifier {
+fun Modifier.panel(accent: Color, framed: Boolean = true): Modifier {
+    val fill = Brush.verticalGradient(listOf(Shelf.copy(alpha = 0.85f), Reef.copy(alpha = 0.85f)))
+    // Unframed: square corners and no outline, for content that runs edge to edge.
+    if (!framed) return background(fill)
     val shape = RoundedCornerShape(12.dp)
     return clip(shape)
-        .background(Brush.verticalGradient(listOf(Shelf.copy(alpha = 0.85f), Reef.copy(alpha = 0.85f))))
+        .background(fill)
         .border(1.dp, Brush.linearGradient(listOf(accent, accent.copy(alpha = 0.15f))), shape)
 }
 

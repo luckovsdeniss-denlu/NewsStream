@@ -13,6 +13,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import com.newsstream.ui.images.PrefetchAhead
+import com.newsstream.ui.images.rememberLeadImage
+import com.newsstream.ui.images.LeadImage
 import com.newsstream.ui.images.pixelsFor
 import com.newsstream.ui.images.sizedRequest
 import com.newsstream.ui.ViewSize
@@ -39,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -115,8 +118,9 @@ fun ArticleFeed(
         when {
             articles.isNotEmpty() -> LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                // Full-screen stories run edge to edge; smaller cards keep a margin.
+                contentPadding = if (size == ViewSize.FULL) PaddingValues(0.dp) else PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(if (size == ViewSize.FULL) 2.dp else 6.dp),
             ) {
                 if (failedSources.isNotEmpty()) {
                     item {
@@ -224,29 +228,38 @@ fun ArticleCard(
     val header: @Composable () -> Unit = {
         CardHeader(article, accent, showTopic, topicSelected, onTopicClick, saved, onToggleSave)
     }
-    val base = modifier.fillMaxWidth().panel(accent).clickable(onClick = onClick)
+    // Full-screen cards have no frame, so the picture reaches the screen edges.
+    val base = modifier.fillMaxWidth().panel(accent, framed = size != ViewSize.FULL).clickable(onClick = onClick)
     // Every size fills its card: the headline first, then as much of the story's text as fits
     // (opening paragraphs when the source gives full text, otherwise the summary).
     val text = remember(article) { cardText(article) }
     when (size) {
         ViewSize.FULL, ViewSize.HALF -> Column(base) {
             val full = size == ViewSize.FULL
-            // Pictures appear on news cards only at the full-screen size.
-            val image = if (full) article.imageUrl ?: article.gridImageUrl else null
+            // Pictures appear on news cards only at the full-screen size. Stories whose feed has no
+            // picture get the one their article page shows in link previews.
+            val lead = if (full) rememberLeadImage(article).value else LeadImage.None
+            var failed by remember(lead) { mutableStateOf(false) }
+            val image = (lead as? LeadImage.Found)?.url?.takeUnless { failed }
             if (image != null) {
                 val context = LocalContext.current
                 AsyncImage(
                     model = remember(image, size) { sizedRequest(context, image, pixelsFor(size), article.gridImageUrl) },
                     contentDescription = article.title,
                     contentScale = ContentScale.Crop,
+                    // A picture that can't be loaded gives its space back to the text.
+                    onError = { failed = true },
                     // Full size gives the text most of the card: the photo takes 45% of its height.
-                    modifier = Modifier.fillMaxWidth().weight(0.45f),
+                    modifier = Modifier.fillMaxWidth().weight(0.45f).background(Color.Black),
                 )
+            } else if (lead == LeadImage.Searching) {
+                // Keeps the layout steady while the picture is looked up.
+                Box(Modifier.fillMaxWidth().weight(0.45f).background(Color.Black.copy(alpha = 0.4f)))
             }
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .weight(if (image != null) 0.55f else 1f)
+                    .weight(if (image != null || lead == LeadImage.Searching) 0.55f else 1f)
                     .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
