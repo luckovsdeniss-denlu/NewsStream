@@ -28,10 +28,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -108,6 +110,19 @@ fun HomeScreen(
         Scaffold(
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onBackground,
+            // In News, shuffle to 5 random news sources that aren't on yet (the empty starting
+            // screen has its own button for the first pick).
+            floatingActionButton = {
+                if (mode == Mode.NEWS && !state.noSourcesSelected) {
+                    FloatingActionButton(
+                        onClick = pickRandomSources,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ) {
+                        Icon(Icons.Filled.Shuffle, contentDescription = "Show 5 random new news sources")
+                    }
+                }
+            },
             topBar = {
                 TopAppBar(
                     title = {

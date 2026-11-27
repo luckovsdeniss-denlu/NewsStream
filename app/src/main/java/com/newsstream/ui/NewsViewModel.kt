@@ -122,12 +122,14 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Replaces the news-source selection with [count] random news sources (from [topic]'s sources
-     * when a topic is chosen) and loads them. Social and YouTube choices are left as they are.
-     * Returns the names picked.
+     * when a topic is chosen) and loads them. Sources that are on now are skipped, so each shuffle
+     * brings new ones. Social and YouTube choices are left as they are. Returns the names picked.
      */
     fun pickRandomNewsSources(count: Int = 5, topic: Topic? = null): List<String> {
         val news = _state.value.sources.filter { it.kind == ContentKind.NEWS }
-        val pool = news.filter { topic == null || it.category == topic }.ifEmpty { news }
+        val candidates = news.filter { topic == null || it.category == topic }.ifEmpty { news }
+        val fresh = candidates.filter { it.name in _state.value.hiddenSources }
+        val pool = if (fresh.size >= count) fresh else candidates
         val picked = pool.shuffled().take(count).map { it.name }
         setHidden(_state.value.hiddenSources + news.map { it.name } - picked.toSet())
         loadIfMissing(picked)

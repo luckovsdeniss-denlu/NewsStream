@@ -30,7 +30,7 @@ feed, with on-device analytics that show what's trending, who reported it first 
 | 💬 **Social** | Reddit, Hacker News, Lobsters, Lemmy, Mastodon, Bluesky, Telegram and VK, with likes, comments and shares. |
 | 🔖 **Saved** | Bookmark anything; kept on the device and readable offline. |
 | 📐 **Four sizes** | One story per screen, or 2, 3 or 5 per screen. Every size fills the card with as much text as fits. |
-| 🎲 **Random 5** | Not sure where to start? Get 5 random news sources in one tap. |
+| 🎲 **Random 5** | Tap the shuffle button in News to swap in 5 random news sources you haven't got on yet. |
 | 🌙 **Deep Ocean theme** | A dark navy design with colour-coded topics. |
 
 ## 📊 Insights
